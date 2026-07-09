@@ -4,7 +4,7 @@ Aufgrund der Möglichkeit, statistische Daten zu den Neuzulassungen von Fahrzeug
 ## Umsetzung
 Da es noch keinen Automatismus für die Abfrage des Statistikportals gibt, müssen die Daten manuell dort abgefragt, als Detei bereitgestellt, mit dem Skript csv2html.py in ein gültiges HTML-Format umgewandelt und anschliessend auf den Anzeige-Webserver (synvoll.cn) hochgeladen werden.
 
-![Workflow-Darstellung KBA-Python-Webserver](/doc/KBA-Python-Workflow.jpg)
+![Workflow-Darstellung KBA-Python-Webserver](doc/KBA-Python-Workflow.jpg)
 
 Die beiden Schritte sind:
 - Extrahieren der gewünschten Daten aus dem KBA-Statistikportal und speichern der CSV-Datei auf dem Webserver (synvoll.cn)
