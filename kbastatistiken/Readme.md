@@ -4,7 +4,7 @@ Aufgrund der Möglichkeit, statistische Daten zu den Neuzulassungen von Fahrzeug
 ## Umsetzung
 Da es noch keinen Automatismus für die Abfrage des Statistikportals gibt, müssen die Daten manuell dort abgefragt, als Detei bereitgestellt und mit dem Webformular umgewandelt werden.
 
-![Workflow-Darstellung KBA-Python-Webserver](doc/GitHub-Workflow.jpg)
+![Workflow-Darstellung KBA-Python-Webserver](doc/GitHub-Worflow.jpg)
 
 Die beiden Schritte sind:
 - Extrahieren der gewünschten Daten aus dem KBA-Statistikportal und lokale Speicherung als CSV-Datei
