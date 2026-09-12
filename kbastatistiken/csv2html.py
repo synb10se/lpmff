@@ -200,6 +200,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
         'C10': {'main': '#9ebca5', 'header': '#8cae98'},
         'T03': {'main': '#b8c7cf', 'header': '#a8bdb9'}
     }
+    december_colors = ['#f7d9d4', '#d8e8f5', '#e3efd7', '#f5e8c8', '#e5dcf2']
     
     html = '''<!DOCTYPE html>
 <html lang="de">
@@ -263,6 +264,14 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
     html += '''
         tr:nth-child(even) { background-color: #fafafa; }
         tr:nth-child(odd) { background-color: #ffffff; }
+'''
+    for color_index, color in enumerate(december_colors):
+        html += f'''        tr.december-row-{color_index} {{
+            background-color: {color};
+        }}
+'''
+
+    html += '''
         td {
             font-family: 'Courier New', monospace;
             color: #333;
@@ -280,7 +289,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
                 <tr>
                     <th rowspan="2">Jahr</th>
                     <th rowspan="2">Monat</th>
-                    <th rowspan="2">Kumuliert</th>
+                    <th rowspan="2">Kumuliert pro Jahr</th>
 '''
     
     # Dynamische Kopfzeilen basierend auf Zielsmodellen
@@ -335,6 +344,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
 
     sorted_keys = sorted(aggregated_data.keys(), key=lambda k: (int(k[0]), monats_index[k[1]]))    #sorted_keys = sorted(aggregated_data.keys())
     yearly_totals = {}
+    december_row_index = 0
     
     for jahr_monat in sorted_keys:
         jahr, monat = jahr_monat
@@ -378,7 +388,13 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
                 cells.append(f'<td>{get_value(model, "bev")}</td>')
                 cells.append(f'<td>{get_value(model, "reev")}</td>')
         
-        html += '                <tr>' + ''.join(cells) + '</tr>\n'
+        row_class = ''
+        if monat == 'Dezember':
+            color_index = december_row_index % len(december_colors)
+            row_class = f' class="december-row-{color_index}"'
+            december_row_index += 1
+
+        html += f'                <tr{row_class}>' + ''.join(cells) + '</tr>\n'
     
     html += '''            </tbody>
         </table>
