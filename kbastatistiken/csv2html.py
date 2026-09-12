@@ -266,7 +266,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
         tr:nth-child(odd) { background-color: #ffffff; }
 '''
     for color_index, color in enumerate(december_colors):
-        html += f'''        tr.december-row-{color_index} {{
+        html += f'''        tr.december-row-{color_index} td:nth-child(-n+3) {{
             background-color: {color};
         }}
 '''
