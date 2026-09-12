@@ -149,18 +149,18 @@ def aggregate_by_month_and_model(data, column_mapping, verbose=False, quiet=Fals
             aggregated[key][modellreihe] = {
                 'gesamt': '',
                 'bev': '',
-                'reew': '',
+                'reev': '',
                 'awd': ''
             }
         
         # Werte extrahieren
         aggregated[key][modellreihe]['gesamt'] = row.get(column_mapping['gesamt'], '').strip() or '-'
         bev_val = row.get(column_mapping['bev'], '').strip()
-        reew_val = row.get(column_mapping['reew'], '').strip()
+        reev_val = row.get(column_mapping['reev'], '').strip()
         awd_val = row.get(column_mapping['awd'], '').strip()
         
         aggregated[key][modellreihe]['bev'] = bev_val if bev_val else ''
-        aggregated[key][modellreihe]['reew'] = reew_val if reew_val else ''
+        aggregated[key][modellreihe]['reev'] = reev_val if reev_val else ''
         aggregated[key][modellreihe]['awd'] = awd_val if awd_val else ''
     
     if skipped > 0 and verbose:
@@ -287,12 +287,12 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
         elif model == 'B10':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
-            html += f'                    <th class="group-{model} header-level-2">REEW</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">reev</th>\n'
         elif model == 'C10':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
             html += f'                    <th class="group-{model} header-level-2">AWD</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
-            html += f'                    <th class="group-{model} header-level-2">REEW</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">reev</th>\n'
         elif model == 'T03':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
     
@@ -333,11 +333,11 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
             
             if model == 'B10':
                 cells.append(f'<td>{get_value(model, "bev")}</td>')
-                cells.append(f'<td>{get_value(model, "reew")}</td>')
+                cells.append(f'<td>{get_value(model, "reev")}</td>')
             elif model == 'C10':
                 cells.append(f'<td>{get_value(model, "awd")}</td>')
                 cells.append(f'<td>{get_value(model, "bev")}</td>')
-                cells.append(f'<td>{get_value(model, "reew")}</td>')
+                cells.append(f'<td>{get_value(model, "reev")}</td>')
         
         html += '                <tr>' + ''.join(cells) + '</tr>\n'
     
@@ -402,7 +402,7 @@ def main():
         'modellreihe': 'Modellreihe',
         'gesamt': 'Anzahl',
         'bev': 'Elektro (BEV)',
-        'reew': 'Plug-in-Hybrid',
+        'reev': 'Plug-in-Hybrid',
         'awd': 'Allradantrieb'
     }
     
