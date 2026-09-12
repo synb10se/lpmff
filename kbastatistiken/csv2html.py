@@ -10,8 +10,26 @@ Verwendung:
 
 import csv
 import argparse
+from decimal import Decimal, InvalidOperation
+import io
 from pathlib import Path
 import sys
+
+
+def configure_output_encoding():
+    """Prevent server locale settings from breaking status output."""
+    for stream_name in ('stdout', 'stderr'):
+        stream = getattr(sys, stream_name)
+        if hasattr(stream, 'buffer'):
+            wrapped_stream = io.TextIOWrapper(
+                stream.buffer,
+                encoding='utf-8',
+                errors='replace',
+            )
+            setattr(sys, stream_name, wrapped_stream)
+
+
+configure_output_encoding()
 
 
 def parse_arguments():
@@ -41,8 +59,8 @@ Voraussetzung:
     parser.add_argument(
         '-o', '--output',
         type=str,
-        default='kba-statistik.html',
-        help='Ausgabe-HTML-Datei (Standard: kba_statistik.html)'
+        default='lm-kba-statistik.html',
+        help='Ausgabe-HTML-Datei (Standard: lm-kba-statistik.html)'
     )
     
     parser.add_argument(
@@ -106,7 +124,7 @@ def load_csv_data(csv_filename, verbose=False, quiet=False):
             for row in reader:
                 data.append(row)
         
-        print(f"✓ {len(data)} Datensätze geladen")
+        print(f"   ✓ {len(data)} Datensätze geladen")
         return data
         
     except UnicodeDecodeError:
@@ -176,6 +194,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
     
     # CSS definieren
     css_colors = {
+        'B03X': {'main': "#737d82", 'header': "#585f63"}, 
         'B05': {'main': '#e6c84a', 'header': '#d4ba3e'},
         'B10': {'main': '#a9a2c9', 'header': '#9b91bf'},
         'C10': {'main': '#9ebca5', 'header': '#8cae98'},
@@ -203,14 +222,16 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
         }
         table {
             border-collapse: collapse;
-            width: 100%;
-            min-width: 1000px;
+            table-layout: auto;
+            width: max-content;
+            min-width: 100%;
         }
         th, td {
             border: 1px solid #ccc;
             padding: 8px 10px;
             text-align: center;
             font-size: 13px;
+            white-space: nowrap;
         }
         .header-level-1 {
             font-weight: bold;
@@ -259,10 +280,12 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
                 <tr>
                     <th rowspan="2">Jahr</th>
                     <th rowspan="2">Monat</th>
+                    <th rowspan="2">Kumuliert</th>
 '''
     
     # Dynamische Kopfzeilen basierend auf Zielsmodellen
     model_configs = {
+        'B03X': {'colspan': 1, 'has_sub': True},
         'B05': {'colspan': 1, 'has_sub': True},
         'B10': {'colspan': 3, 'has_sub': True},
         'C10': {'colspan': 4, 'has_sub': True},
@@ -282,17 +305,19 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
     for model in target_models:
         config = model_configs.get(model, {'colspan': 1, 'has_sub': False})
         
-        if model == 'B05':
+        if model == 'B03X':
+            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+        elif model == 'B05':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
         elif model == 'B10':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
-            html += f'                    <th class="group-{model} header-level-2">reev</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">REEV</th>\n'
         elif model == 'C10':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
             html += f'                    <th class="group-{model} header-level-2">AWD</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
-            html += f'                    <th class="group-{model} header-level-2">reev</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">REEV</th>\n'
         elif model == 'T03':
             html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
     
@@ -309,6 +334,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
     monats_index = {name: i for i, name in enumerate(MONATE)}
 
     sorted_keys = sorted(aggregated_data.keys(), key=lambda k: (int(k[0]), monats_index[k[1]]))    #sorted_keys = sorted(aggregated_data.keys())
+    yearly_totals = {}
     
     for jahr_monat in sorted_keys:
         jahr, monat = jahr_monat
@@ -319,12 +345,25 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
                 val = model_data[model_key].get(field, '')
                 return val if val else ''
             return ''
+
+        monthly_total = Decimal('0')
+        for model in target_models:
+            value = get_value(model, 'gesamt').replace('.', '').replace(',', '.')
+            if value and value != '-':
+                try:
+                    monthly_total += Decimal(value)
+                except InvalidOperation:
+                    continue
+        yearly_totals[jahr] = yearly_totals.get(jahr, Decimal('0')) + monthly_total
         
         cells = []
         
         # Jahr und Monat
         cells.append(f'<td>{jahr}</td>')
         cells.append(f'<td>{monat}</td>')
+        cumulative_total = yearly_totals[jahr]
+        cumulative_display = f'{cumulative_total:,.0f}'.replace(',', '.')
+        cells.append(f'<td>{cumulative_display}</td>')
         
         # Daten für jedes Zielfeld
         for model in target_models:
@@ -433,7 +472,7 @@ def main():
     if args.models:
         target_models = [m.strip() for m in args.models.split(',')]
     else:
-        target_models = ['B05', 'B10', 'C10', 'T03']
+        target_models = ['B03X', 'B05', 'B10', 'C10', 'T03']
     
     if not quiet:
         print(f"\n→ Ziel-Modellreihen: {', '.join(target_models)}")
