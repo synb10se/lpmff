@@ -240,7 +240,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
             position: sticky;
             top: 0;
             z-index: 2;
-            background-color: #585f63;
+            background-color: #bfacaa;
         }
         thead tr:nth-child(2) th {
             position: sticky;
