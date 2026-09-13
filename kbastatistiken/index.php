@@ -4,9 +4,13 @@ session_start();
 const PYTHON_BIN = 'python3';
 const SCRIPT_PATH = __DIR__ . '/csv2html.py';
 const OUTPUT_FILENAME = 'lm-kba-statistik.html';
+const OUTPUT_PATH = __DIR__ . '/' . OUTPUT_FILENAME;
 
 $error = null;
-$generatedHtml = $_SESSION['generated_html'] ?? null;
+$generatedHtml = is_readable(OUTPUT_PATH)
+  ? file_get_contents(OUTPUT_PATH)
+  : ($_SESSION['generated_html'] ?? null);
+$generatedHtml = $generatedHtml === false ? null : $generatedHtml;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_FILES['file1']) || $_FILES['file1']['error'] !== UPLOAD_ERR_OK) {
@@ -37,13 +41,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $details = trim(implode("\n", $output));
                 $error = 'CSV konnte nicht verarbeitet werden.' . ($details ? " $details" : '');
             } else {
-                $generatedHtml = file_get_contents($temporaryOutput);
-                if ($generatedHtml === false) {
-                    $error = 'Die erzeugte HTML-Datei konnte nicht gelesen werden.';
+                if (!copy($temporaryOutput, OUTPUT_PATH)) {
+                    $error = 'Die erzeugte HTML-Datei konnte nicht gespeichert werden.';
                 } else {
-                    $_SESSION['generated_html'] = $generatedHtml;
+                    $generatedHtml = file_get_contents(OUTPUT_PATH);
+                    if ($generatedHtml === false) {
+                        $error = 'Die erzeugte HTML-Datei konnte nicht gelesen werden.';
+                    } else {
+                        $_SESSION['generated_html'] = $generatedHtml;
+                    }
                 }
-            }
         }
 
         if ($temporaryInput !== false && is_file($temporaryInput)) {

@@ -215,7 +215,8 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
             background-color: #f5f5f5;
         }
         .table-container {
-            overflow-x: auto;
+            max-height: 70vh;
+            overflow: auto;
             background: white;
             padding: 10px;
             border-radius: 8px;
@@ -233,6 +234,18 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
             text-align: center;
             font-size: 13px;
             white-space: nowrap;
+            box-sizing: border-box;
+        }
+        thead tr:first-child th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: #585f63;
+        }
+        thead tr:nth-child(2) th {
+            position: sticky;
+            top: 40px;
+            z-index: 2;
         }
         .header-level-1 {
             font-weight: bold;

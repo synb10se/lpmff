@@ -20,7 +20,7 @@ Für den PHP-Betrieb werden diese Dateien in das Webverzeichnis hochgeladen:
 - `index.php`
 - `csv2html.py`
 
-Der Webserver benötigt PHP mit aktivierter `exec()`-Funktion sowie Python 3.6.8. `index.php` ruft `csv2html.py` mit `--input` und `--output` auf. Die CSV und die erzeugte HTML-Datei werden nur temporär gespeichert und danach gelöscht. Das letzte Ergebnis bleibt pro Browser-Session sichtbar.
+Der Webserver benötigt PHP mit aktivierter `exec()`-Funktion sowie Python 3.6.8. `index.php` ruft `csv2html.py` mit `--input` und `--output` auf. Die CSV wird nur temporär gespeichert; die erzeugte `lm-kba-statistik.html` bleibt lokal im selben Verzeichnis erhalten und wird beim nächsten Aufruf wieder angezeigt.
 
 Falls Python nicht unter `python3` erreichbar ist, in `index.php` die Konstante `PYTHON_BIN` an den Serverpfad anpassen, zum Beispiel:
 
