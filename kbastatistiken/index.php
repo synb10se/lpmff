@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($temporaryOutput !== false && is_file($temporaryOutput)) {
             unlink($temporaryOutput);
         }
+      }
     }
 }
 ?>
