@@ -9,7 +9,7 @@ const OUTPUT_PATH = __DIR__ . '/' . OUTPUT_FILENAME;
 $error = null;
 $generatedHtml = is_readable(OUTPUT_PATH)
   ? file_get_contents(OUTPUT_PATH)
-  : ($_SESSION['generated_html'] ?? '');
+  : (isset($_SESSION['generated_html']) ? $_SESSION['generated_html'] : '');
 $generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
