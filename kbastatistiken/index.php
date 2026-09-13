@@ -9,8 +9,8 @@ const OUTPUT_PATH = __DIR__ . '/' . OUTPUT_FILENAME;
 $error = null;
 $generatedHtml = is_readable(OUTPUT_PATH)
   ? file_get_contents(OUTPUT_PATH)
-  : ($_SESSION['generated_html'] ?? null);
-$generatedHtml = $generatedHtml === false ? null : $generatedHtml;
+  : ($_SESSION['generated_html'] ?? '');
+$generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_FILES['file1']) || $_FILES['file1']['error'] !== UPLOAD_ERR_OK) {
@@ -102,11 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input id="file1" type="file" name="file1" accept=".csv,text/csv" required>
     <button type="submit">Statistik erzeugen</button>
   </form>
-  <?php if ($generatedHtml !== null): ?>
-    <section class="result">
-      <h2>Ergebnis</h2>
-      <iframe title="Generierte KBA-Statistik" srcdoc="<?= htmlspecialchars($generatedHtml, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"></iframe>
-    </section>
-  <?php endif; ?>
+  <section class="result">
+    <h2>Ergebnis</h2>
+    <iframe title="Generierte KBA-Statistik" srcdoc="<?= htmlspecialchars($generatedHtml, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"></iframe>
+  </section>
 </body>
 </html>
