@@ -148,8 +148,13 @@ def aggregate_by_month_and_model(data, column_mapping, verbose=False, quiet=Fals
     """Gruppieret die Daten nach Monat und Modellreihe."""
     aggregated = {}
     skipped = 0
+    skipped_brand = 0
     
     for i, row in enumerate(data):
+        if row.get(column_mapping['marke'], '').strip().upper() != 'LEAPMOTOR':
+            skipped_brand += 1
+            continue
+
         jahr = row.get(column_mapping['jahr'], '').strip()
         monat = row.get(column_mapping['monat'], '').strip()
         modellreihe = row.get(column_mapping['modellreihe'], '').strip()
@@ -183,6 +188,8 @@ def aggregate_by_month_and_model(data, column_mapping, verbose=False, quiet=Fals
     
     if skipped > 0 and verbose:
         print(f"   ℹ {skipped} Zeilen übersprungen (unvollständige Daten)")
+    if skipped_brand > 0 and verbose:
+        print(f"   ℹ {skipped_brand} Zeilen übersprungen (Marke nicht LEAPMOTOR)")
     
     return aggregated
 
@@ -305,7 +312,7 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
                     <th rowspan="2">Kumuliert pro Jahr</th>
 '''
     
-    # Dynamische Kopfzeilen basierend auf Zielsmodellen
+    # Dynamische Kopfzeilen basierend auf Zielmodellen
     model_configs = {
         'B03X': {'colspan': 1, 'has_sub': True},
         'B05': {'colspan': 1, 'has_sub': True},
@@ -465,6 +472,7 @@ def main():
     # Schritt 2: Spalten-Mapping definieren
     # WICHTIG: Passe diese Namen an deine CSV an!
     column_mapping = {
+        'marke': 'Marke',
         'jahr': '\ufeffBerichtsjahr',
         'monat': 'Berichtsmonat',
         'modellreihe': 'Modellreihe',
