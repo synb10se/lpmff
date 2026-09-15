@@ -5,6 +5,7 @@ const PYTHON_BIN = 'python3';
 const SCRIPT_PATH = __DIR__ . '/csv2html.py';
 const OUTPUT_FILENAME = 'kba-statistiken.html';
 const OUTPUT_PATH = __DIR__ . '/' . OUTPUT_FILENAME;
+const SAVE_PASSWORD_HASH_ENV = 'KBA_SAVE_PASSWORD_HASH';
 
 $error = null;
 $notice = null;
@@ -20,8 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_POST['action'] ?? 'generate';
 
   if ($action === 'save') {
+    $savePasswordHash = getenv(SAVE_PASSWORD_HASH_ENV);
     if (!isset($_SESSION['pending_html'])) {
       $error = 'Es liegt keine ungespeicherte Statistik vor.';
+    } elseif (!is_string($savePasswordHash) || $savePasswordHash === ''
+      || !isset($_POST['save_password'])
+      || !is_string($_POST['save_password'])
+      || !password_verify($_POST['save_password'], $savePasswordHash)) {
+      $error = 'Das Passwort ist nicht korrekt. Die Datei wurde nicht verändert.';
     } elseif (file_put_contents(OUTPUT_PATH, $_SESSION['pending_html'], LOCK_EX) === false) {
       $error = 'Die erzeugte HTML-Datei konnte nicht gespeichert werden.';
     } else {
@@ -140,6 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form action="" method="post">
       <input type="hidden" name="action" value="save">
       <p>Die neue Statistik wurde erzeugt. Soll <?= htmlspecialchars(OUTPUT_FILENAME, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?> jetzt überschrieben werden?</p>
+      <label for="save_password">Passwort:</label>
+      <input id="save_password" type="password" name="save_password" required autocomplete="current-password">
       <button type="submit">Lokales Speichern bestätigen</button>
     </form>
   <?php endif; ?>
