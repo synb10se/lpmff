@@ -259,8 +259,16 @@ def generate_detail_table(data, column_mapping):
         )
 
     detail_html = '''
-    <div class="detail-table-container">
-        <h2>Marken mit Elektro- oder Plug-in-Hybrid-Werten</h2>
+    <div class="detail-table-container tab-panel" id="panel-market-electric">
+        <div class="detail-heading">
+            <h2>Marktvergleich Elektro- und Plug-in-Hybrid</h2>
+            <p>Je Marke werden die Jahreswerte kumuliert; die Dezemberfarbe zeigt den relativen Anteil der Marke im Vergleich zur stärksten Marke.</p>
+        </div>
+        <div class="table-filter" aria-label="Zeitraumfilter">
+            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+            <button type="button" data-filter-reset>Gesamtanzeige</button>
+        </div>
         <table class="detail-table">
             <thead>
                 <tr>'''
@@ -334,6 +342,165 @@ def generate_detail_table(data, column_mapping):
     return detail_html
 
 
+def generate_market_comparison_table(data, column_mapping):
+    """Generiert den kumulierten Vergleich von Elektro- und Verbrennerantrieben."""
+    month_names = (
+        'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+    )
+    month_index = {name: index for index, name in enumerate(month_names, start=1)}
+
+    monthly_totals = {}
+    for row in data:
+        jahr = row.get(column_mapping['jahr'], '').strip()
+        monat = row.get(column_mapping['monat'], '').strip()
+        if not jahr or not monat:
+            continue
+        key = (jahr, monat)
+        totals = monthly_totals.setdefault(key, {
+            'elektro': Decimal('0'),
+            'verbrenner': Decimal('0'),
+        })
+        def parse_value(field):
+            value = row.get(column_mapping[field], '').strip()
+            if not value:
+                return Decimal('0')
+            try:
+                return Decimal(value.replace('.', '').replace(',', '.'))
+            except InvalidOperation:
+                return Decimal('0')
+
+        gesamt = parse_value('gesamt')
+        elektro = parse_value('reev') + parse_value('bev')
+        totals['elektro'] += elektro
+        totals['verbrenner'] += max(gesamt - elektro, Decimal('0'))
+
+    sorted_keys = sorted(
+        monthly_totals,
+        key=lambda key: (int(key[0] or 0), month_index.get(key[1], 0)),
+    )
+
+    monthly_brand_totals = {}
+    for row in data:
+        jahr = row.get(column_mapping['jahr'], '').strip()
+        monat = row.get(column_mapping['monat'], '').strip()
+        marke = row.get(column_mapping['marke'], '').strip()
+        if not jahr or not monat or not marke:
+            continue
+        key = (jahr, monat)
+        if key not in monthly_totals:
+            continue
+        def parse_value(field):
+            value = row.get(column_mapping[field], '').strip()
+            try:
+                return Decimal(value.replace('.', '').replace(',', '.')) if value else Decimal('0')
+            except InvalidOperation:
+                return Decimal('0')
+
+        gesamt = parse_value('gesamt')
+        elektro = parse_value('reev') + parse_value('bev')
+        brand_key = (jahr, monat, marke)
+        brand_totals = monthly_brand_totals.setdefault(brand_key, {
+            'elektro': Decimal('0'), 'verbrenner': Decimal('0'),
+        })
+        brand_totals['elektro'] += elektro
+        brand_totals['verbrenner'] += max(gesamt - elektro, Decimal('0'))
+
+    cumulative_totals = {}
+    comparison_rows = []
+    for jahr, monat in sorted_keys:
+        total_key = jahr
+        total = cumulative_totals.setdefault(total_key, {
+            'elektro': Decimal('0'), 'verbrenner': Decimal('0'),
+        })
+        for field in ('elektro', 'verbrenner'):
+            total[field] += monthly_totals[(jahr, monat)][field]
+
+        comparison_rows.append((
+            (jahr, monat),
+            dict(total),
+        ))
+
+    detail_html = '''
+    <div class="detail-table-container tab-panel" id="panel-market-comparison">
+        <div class="detail-heading">
+            <h2>Marktvergleich Verbrenner-Elektromobilität</h2>
+            <p>Elektroantrieb umfasst Plug-in-Hybrid und Elektro (BEV); Verbrennerantrieb ist die verbleibende Anzahl. Beide Werte werden über das Jahr kumuliert.</p>
+        </div>
+        <div class="table-filter" aria-label="Zeitraumfilter">
+            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+            <button type="button" data-filter-reset>Gesamtanzeige</button>
+        </div>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Jahr</th>
+                    <th>Monat</th>
+                    <th>Anzahl kumuliert p.a.</th>
+                    <th>Elektroantrieb</th>
+                    <th>Verbrennerantrieb</th>
+                    <th>Spitzenreiter Elektroantrieb</th>
+                    <th>Spitzenreiter Verbrennerantrieb</th>
+                </tr>
+            </thead>
+            <tbody>
+'''
+    period_leaders = {}
+    cumulative_brand_totals = {}
+    periods = sorted(
+        {(key[0], key[1]) for key, _ in comparison_rows},
+        key=lambda period: (int(period[0] or 0), month_index.get(period[1], 0)),
+    )
+    for jahr, monat in periods:
+        for (brand_year, brand_month, marke), monthly_values in monthly_brand_totals.items():
+            if brand_year == jahr and brand_month == monat:
+                brand_key = (jahr, marke)
+                brand_total = cumulative_brand_totals.setdefault(brand_key, {
+                    'elektro': Decimal('0'), 'verbrenner': Decimal('0'),
+                })
+                for field in ('elektro', 'verbrenner'):
+                    brand_total[field] += monthly_values[field]
+        brand_values = {
+            brand: totals for (brand_year, brand), totals in cumulative_brand_totals.items()
+            if brand_year == jahr
+        }
+        period_leaders[(jahr, monat)] = {
+            field: max(
+                brand_values,
+                key=lambda brand: (brand_values[brand][field], brand),
+            ) if brand_values else ''
+            for field in ('elektro', 'verbrenner')
+        }
+
+    for key, totals in comparison_rows:
+        jahr, monat = key
+        anzahl = totals['elektro'] + totals['verbrenner']
+        values = [
+            jahr, monat,
+            f'{anzahl:,.0f}'.replace(',', '.'),
+            f'{totals["elektro"]:,.0f}'.replace(',', '.'),
+            f'{totals["verbrenner"]:,.0f}'.replace(',', '.'),
+            period_leaders[(jahr, monat)]['elektro'],
+            period_leaders[(jahr, monat)]['verbrenner'],
+        ]
+        row_class = ' class="detail-december-row"' if monat == 'Dezember' else ''
+        detail_html += f'                <tr{row_class}>'
+        detail_html += ''.join(
+            f'<td class="detail-december-cell">{html_module.escape(value)}</td>'
+            if monat == 'Dezember'
+            else f'<td>{html_module.escape(value)}</td>'
+            for index, value in enumerate(values)
+        )
+        detail_html += '</tr>\n'
+
+    detail_html += '''            </tbody>
+        </table>
+    </div>
+'''
+    return detail_html
+
+
 def generate_html(aggregated_data, target_models, detail_data=None,
                   column_mapping=None, verbose=False, quiet=False):
     """Generiert den vollständigen HTML-Code."""
@@ -362,8 +529,37 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             margin: 20px;
             background-color: #f5f5f5;
         }
+        .tab-layout {
+            width: 100%;
+        }
+        .tab-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            border: 1px solid #aeb1c5;
+            border-radius: 4px 4px 0 0;
+            padding: 9px 12px;
+            background: #d5d7e3;
+            color: #333;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+        .tab-button.active {
+            background: #c5c7d8;
+            font-weight: bold;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
         .table-container {
-            max-height: 70vh;
+            max-height: 80vh;
             overflow: auto;
             background: white;
             padding: 10px;
@@ -372,16 +568,79 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         }
         .detail-table-container {
             margin-top: 30px;
-            max-height: 70vh;
+            max-height: 80vh;
             overflow: auto;
             background: white;
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        .table-container h2,
         .detail-table-container h2 {
-            margin: 5px 0 15px;
+            margin: 0;
             font-size: 18px;
+            line-height: 22px;
+        }
+        .detail-heading {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            height: 48px;
+            box-sizing: border-box;
+            padding: 5px 10px 10px;
+            background: #c5c7d8;
+            border-bottom: 1px solid #aeb1c5;
+        }
+        .detail-heading p {
+            margin: 0;
+            color: #555;
+            font-size: 12px;
+            white-space: normal;
+        }
+        .table-filter {
+            position: sticky;
+            top: 48px;
+            z-index: 4;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 10px;
+            min-height: 44px;
+            padding: 6px 10px;
+            background: #f0f1f6;
+            border-bottom: 1px solid #c5c7d8;
+        }
+        .table-filter label {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .table-filter select,
+        .table-filter button {
+            min-height: 28px;
+            padding: 4px 8px;
+            border: 1px solid #aeb1c5;
+            border-radius: 3px;
+            background: white;
+            font: inherit;
+        }
+        .table-filter button {
+            cursor: pointer;
+            background: #d5d7e3;
+        }
+        .detail-table-container table thead tr:first-child th {
+            top: 92px;
+            z-index: 3;
+        }
+        .tab-panel > table thead tr:first-child th {
+            top: 92px;
+            z-index: 3;
+        }
+        .tab-panel > table thead tr:nth-child(2) th {
+            top: 132px;
+            z-index: 3;
         }
         .detail-december-cell {
             background-color: #f5e8c8;
@@ -402,13 +661,13 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         }
         thead tr:first-child th {
             position: sticky;
-            top: 0;
+            top: 92px;
             z-index: 2;
             background-color: #e1e2ef;
         }
         thead tr:nth-child(2) th {
             position: sticky;
-            top: 40px;
+            top: 132px;
             z-index: 2;
         }
         .header-level-1 {
@@ -457,10 +716,53 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             text-align: left;
             font-family: Arial, sans-serif;
         }
+        @media (max-width: 700px) {
+            .tab-list {
+                flex-direction: column;
+            }
+            .tab-button {
+                width: 100%;
+            }
+            .detail-heading {
+                display: block;
+                height: 72px;
+            }
+            .detail-heading p {
+                margin-top: 4px;
+            }
+            .table-filter {
+                top: 72px;
+                min-height: 70px;
+            }
+            .detail-table-container table thead tr:first-child th,
+            .tab-panel > table thead tr:first-child th,
+            thead tr:first-child th {
+                top: 142px;
+            }
+            .tab-panel > table thead tr:nth-child(2) th,
+            thead tr:nth-child(2) th {
+                top: 182px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="table-container">
+    <div class="tab-layout">
+        <div class="tab-list" role="tablist">
+            <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab="panel-registrations">Neuzulassungen Leapmotor</button>
+            <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="panel-market-electric">Marktvergleich Elektro- und Plug-in-Hybrid</button>
+            <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="panel-market-comparison">Marktvergleich Verbrenner-Elektromobilität</button>
+        </div>
+    <div class="table-container tab-panel active" id="panel-registrations">
+        <div class="detail-heading">
+            <h2>Neuzulassungen Leapmotor</h2>
+            <p>Die Tabelle zeigt ausschließlich LEAPMOTOR-Neuzulassungen; die kumulierte Anzahl wird innerhalb jedes Jahres fortgeschrieben.</p>
+        </div>
+        <div class="table-filter" aria-label="Zeitraumfilter">
+            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+            <button type="button" data-filter-reset>Gesamtanzeige</button>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -579,8 +881,64 @@ def generate_html(aggregated_data, target_models, detail_data=None,
 '''
     if detail_data is not None and column_mapping is not None:
         html += generate_detail_table(detail_data, column_mapping)
+        html += generate_market_comparison_table(detail_data, column_mapping)
 
-    html += '''</body>
+    html += '''</div>
+    <script>
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(tab => {
+                    tab.classList.toggle('active', tab === button);
+                    tab.setAttribute('aria-selected', tab === button ? 'true' : 'false');
+                });
+                document.querySelectorAll('.tab-panel').forEach(panel => {
+                    panel.classList.toggle('active', panel.id === button.dataset.tab);
+                });
+            });
+        });
+
+        const monthOrder = {
+            Januar: 1, Februar: 2, März: 3, April: 4, Mai: 5, Juni: 6,
+            Juli: 7, August: 8, September: 9, Oktober: 10, November: 11, Dezember: 12
+        };
+        const panels = Array.from(document.querySelectorAll('.tab-panel'));
+        const filters = Array.from(document.querySelectorAll('.table-filter'));
+        const allRows = panels.map(panel => Array.from(panel.querySelectorAll('tbody tr')));
+        const years = [...new Set(allRows.flat().map(row => row.cells[0]?.textContent.trim()).filter(Boolean))].sort();
+        const months = Object.keys(monthOrder);
+
+        filters.forEach(filter => {
+            const yearSelect = filter.querySelector('[data-filter="year"]');
+            const monthSelect = filter.querySelector('[data-filter="month"]');
+            years.forEach(year => yearSelect.appendChild(new Option(year, year)));
+            months.forEach(month => monthSelect.appendChild(new Option(month, month)));
+        });
+
+        const applyGlobalFilter = (year, month) => {
+            filters.forEach(filter => {
+                filter.querySelector('[data-filter="year"]').value = year;
+                filter.querySelector('[data-filter="month"]').value = month;
+            });
+            allRows.forEach(rows => rows.forEach(row => {
+                const matchesYear = !year || row.cells[0]?.textContent.trim() === year;
+                const matchesMonth = !month || row.cells[1]?.textContent.trim() === month;
+                row.hidden = !(matchesYear && matchesMonth);
+            }));
+        };
+
+        filters.forEach(filter => {
+            filter.querySelectorAll('select').forEach(select => select.addEventListener('change', () => {
+                applyGlobalFilter(
+                    filter.querySelector('[data-filter="year"]').value,
+                    filter.querySelector('[data-filter="month"]').value,
+                );
+            }));
+            filter.querySelector('[data-filter-reset]').addEventListener('click', () => {
+                applyGlobalFilter('', '');
+            });
+        });
+    </script>
+</body>
 </html>
 '''
     
