@@ -11,6 +11,7 @@ Verwendung:
 import csv
 import argparse
 from decimal import Decimal, InvalidOperation
+import html as html_module
 import io
 from pathlib import Path
 import sys
@@ -148,11 +149,9 @@ def aggregate_by_month_and_model(data, column_mapping, verbose=False, quiet=Fals
     """Gruppieret die Daten nach Monat und Modellreihe."""
     aggregated = {}
     skipped = 0
-    skipped_brand = 0
     
     for i, row in enumerate(data):
         if row.get(column_mapping['marke'], '').strip().upper() != 'LEAPMOTOR':
-            skipped_brand += 1
             continue
 
         jahr = row.get(column_mapping['jahr'], '').strip()
@@ -188,13 +187,155 @@ def aggregate_by_month_and_model(data, column_mapping, verbose=False, quiet=Fals
     
     if skipped > 0 and verbose:
         print(f"   ℹ {skipped} Zeilen übersprungen (unvollständige Daten)")
-    if skipped_brand > 0 and verbose:
-        print(f"   ℹ {skipped_brand} Zeilen übersprungen (Marke nicht LEAPMOTOR)")
     
     return aggregated
 
 
-def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
+def generate_detail_table(data, column_mapping):
+    """Generiert kumulierte Werte je Jahr, Monat und Marke."""
+    headers = [
+        'Jahr',
+        'Monat',
+        column_mapping['marke'], 'Anzahl kumuliert p.a.',
+        column_mapping['reev'], 
+        column_mapping['bev'], 
+    ]
+    display_headers = [header.lstrip('\ufeff') for header in headers]
+    monat_index = {
+        name: index for index, name in enumerate((
+            'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+        ), start=1)
+    }
+    filtered_rows = [
+        row for row in data
+        if row.get(column_mapping['bev'], '').strip()
+        or row.get(column_mapping['reev'], '').strip()
+    ]
+
+    monthly_totals = {}
+    for row in filtered_rows:
+        jahr = row.get(column_mapping['jahr'], '').strip()
+        monat = row.get(column_mapping['monat'], '').strip()
+        marke = row.get(column_mapping['marke'], '').strip()
+        key = (jahr, monat, marke)
+        if key not in monthly_totals:
+            monthly_totals[key] = {
+                'gesamt': Decimal('0'),
+                'reev': Decimal('0'),
+                'bev': Decimal('0'),
+            }
+        for field in ('gesamt', 'reev', 'bev'):
+            value = row.get(column_mapping[field], '').strip()
+            if value:
+                try:
+                    monthly_totals[key][field] += Decimal(
+                        value.replace('.', '').replace(',', '.')
+                    )
+                except InvalidOperation:
+                    pass
+
+    sorted_keys = sorted(
+        monthly_totals,
+        key=lambda key: (
+            int(key[0] or 0),
+            monat_index.get(key[1], 0),
+            key[2].upper(),
+        ),
+    )
+
+    cumulative_totals = {}
+    annual_brand_totals = {}
+    for jahr, monat, marke in sorted_keys:
+        annual_brand_totals[(jahr, marke)] = (
+            annual_brand_totals.get((jahr, marke), Decimal('0'))
+            + monthly_totals[(jahr, monat, marke)]['gesamt']
+        )
+    largest_brand_totals = {}
+    for (jahr, marke), total in annual_brand_totals.items():
+        largest_brand_totals[jahr] = max(
+            largest_brand_totals.get(jahr, Decimal('0')),
+            total,
+        )
+
+    detail_html = '''
+    <div class="detail-table-container">
+        <h2>Marken mit Elektro- oder Plug-in-Hybrid-Werten</h2>
+        <table class="detail-table">
+            <thead>
+                <tr>'''
+    detail_html += ''.join(
+        f'<th>{html_module.escape(header or "")}</th>'
+        for header in display_headers
+    )
+    detail_html += '''</tr>
+            </thead>
+            <tbody>
+'''
+    for jahr, monat, marke in sorted_keys:
+        total_key = (jahr, marke)
+        monthly_values = monthly_totals[(jahr, monat, marke)]
+        if total_key not in cumulative_totals:
+            cumulative_totals[total_key] = {
+                'gesamt': Decimal('0'),
+                'reev': Decimal('0'),
+                'bev': Decimal('0'),
+            }
+        for field in ('gesamt', 'reev', 'bev'):
+            cumulative_totals[total_key][field] += monthly_values[field]
+
+        row_class = ' class="detail-december-row"' if monat == 'Dezember' else ''
+        share_color = None
+        share_text_color = None
+        share_percent = None
+        if monat == 'Dezember' and largest_brand_totals[jahr] > 0:
+            share = annual_brand_totals[total_key] / largest_brand_totals[jahr]
+            share_percent = f'{share * 100:.1f}'.replace('.', ',') + '%'
+            if share > Decimal('0.8'):
+                share_color = 'LimeGreen'
+                share_text_color = '#111'
+            elif share > Decimal('0.6'):
+                share_color = 'khaki'
+                share_text_color = '#111'
+            elif share > Decimal('0.4'):
+                share_color = 'PeachPuff'
+                share_text_color = '#111'
+            elif share > Decimal('0.2'):
+                share_color = 'LightSteelBlue'
+                share_text_color = '#111'
+            else:
+                share_color = 'gray'
+                share_text_color = '#fff'
+        cumulative_anzahl = f'{cumulative_totals[total_key]["gesamt"]:,.0f}'.replace(',', '.')
+        if share_percent:
+            cumulative_anzahl += f' ({share_percent})'
+        values = [
+            jahr,
+            monat,
+            marke,
+            cumulative_anzahl,
+            f'{cumulative_totals[total_key]["reev"]:,.0f}'.replace(',', '.'),
+            f'{cumulative_totals[total_key]["bev"]:,.0f}'.replace(',', '.'),
+        ]
+        detail_html += f'                <tr{row_class}>'
+        detail_html += ''.join(
+            f'<td style="background-color: {share_color}; color: {share_text_color}">{html_module.escape(value)}</td>'
+            if monat == 'Dezember' and index == 3 and share_color
+            else f'<td class="detail-december-cell">{html_module.escape(value)}</td>'
+            if monat == 'Dezember' and index in (0, 1, 2)
+            else f'<td>{html_module.escape(value)}</td>'
+            for index, value in enumerate(values)
+        )
+        detail_html += '</tr>\n'
+    detail_html += '''            </tbody>
+        </table>
+    </div>
+'''
+    return detail_html
+
+
+def generate_html(aggregated_data, target_models, detail_data=None,
+                  column_mapping=None, verbose=False, quiet=False):
     """Generiert den vollständigen HTML-Code."""
     if not quiet:
         log("\nHTML generieren...", verbose, quiet)
@@ -228,6 +369,22 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .detail-table-container {
+            margin-top: 30px;
+            max-height: 70vh;
+            overflow: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .detail-table-container h2 {
+            margin: 5px 0 15px;
+            font-size: 18px;
+        }
+        .detail-december-cell {
+            background-color: #f5e8c8;
         }
         table {
             border-collapse: collapse;
@@ -419,7 +576,11 @@ def generate_html(aggregated_data, target_models, verbose=False, quiet=False):
     html += '''            </tbody>
         </table>
     </div>
-</body>
+'''
+    if detail_data is not None and column_mapping is not None:
+        html += generate_detail_table(detail_data, column_mapping)
+
+    html += '''</body>
 </html>
 '''
     
@@ -515,7 +676,14 @@ def main():
         print(f"\n→ Ziel-Modellreihen: {', '.join(target_models)}")
     
     # Schritt 5: HTML generieren
-    html = generate_html(aggregated, target_models, verbose, quiet)
+    html = generate_html(
+        aggregated,
+        target_models,
+        detail_data=data,
+        column_mapping=column_mapping,
+        verbose=verbose,
+        quiet=quiet,
+    )
     
     # Schritt 6: Speichern
     if save_html(html, args.output, args.dry_run, quiet):
