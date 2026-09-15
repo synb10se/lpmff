@@ -272,10 +272,20 @@ def generate_detail_table(data, column_mapping):
         <table class="detail-table">
             <thead>
                 <tr>'''
-    detail_html += ''.join(
-        f'<th>{html_module.escape(header or "")}</th>'
-        for header in display_headers
-    )
+    sortable_headers = []
+    for index, (header, sort_key) in enumerate(zip(
+        display_headers,
+        ('year', 'month', 'brand', '', '', ''),
+    )):
+        attributes = (
+            f' data-sortable data-sort-key="{sort_key}"'
+            f' data-sort-column="{index}" tabindex="0"'
+            if sort_key else ''
+        )
+        sortable_headers.append(
+            f'<th{attributes}>{html_module.escape(header or "")}</th>'
+        )
+    detail_html += ''.join(sortable_headers)
     detail_html += '''</tr>
             </thead>
             <tbody>
@@ -435,8 +445,8 @@ def generate_market_comparison_table(data, column_mapping):
         <table class="comparison-table">
             <thead>
                 <tr>
-                    <th>Jahr</th>
-                    <th>Monat</th>
+                    <th data-sortable data-sort-key="year" data-sort-column="0" tabindex="0">Jahr</th>
+                    <th data-sortable data-sort-key="month" data-sort-column="1" tabindex="0">Monat</th>
                     <th>Anzahl kumuliert p.a.</th>
                     <th>Elektroantrieb</th>
                     <th>Verbrennerantrieb</th>
@@ -642,6 +652,20 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             top: 132px;
             z-index: 3;
         }
+        th[data-sortable] {
+            cursor: pointer;
+        }
+        th[data-sortable]::after {
+            content: ' ↕';
+            color: #6b6e7e;
+            font-size: 11px;
+        }
+        th[data-sortable][aria-sort="ascending"]::after {
+            content: ' ↑';
+        }
+        th[data-sortable][aria-sort="descending"]::after {
+            content: ' ↓';
+        }
         .detail-december-cell {
             background-color: #f5e8c8;
         }
@@ -766,8 +790,8 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         <table>
             <thead>
                 <tr>
-                    <th rowspan="2">Jahr</th>
-                    <th rowspan="2">Monat</th>
+                    <th rowspan="2" data-sortable data-sort-key="year" data-sort-column="0" tabindex="0">Jahr</th>
+                    <th rowspan="2" data-sortable data-sort-key="month" data-sort-column="1" tabindex="0">Monat</th>
                     <th rowspan="2">Kumuliert pro Jahr</th>
 '''
     
@@ -904,8 +928,27 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         const panels = Array.from(document.querySelectorAll('.tab-panel'));
         const filters = Array.from(document.querySelectorAll('.table-filter'));
         const allRows = panels.map(panel => Array.from(panel.querySelectorAll('tbody tr')));
-        const years = [...new Set(allRows.flat().map(row => row.cells[0]?.textContent.trim()).filter(Boolean))].sort();
+        const allTableRows = allRows.flat();
+        const years = [...new Set(allTableRows.map(row => row.cells[0]?.textContent.trim()).filter(Boolean))]
+            .sort((first, second) => Number(first) - Number(second));
         const months = Object.keys(monthOrder);
+        const tables = panels
+            .map(panel => panel.querySelector('table'))
+            .filter(Boolean);
+
+        const getMonthNumber = row => monthOrder[row.cells[1]?.textContent.trim()] || 0;
+        const latestYear = years.includes(String(new Date().getFullYear()))
+            ? String(new Date().getFullYear())
+            : (years[years.length - 1] || '');
+        const latestMonth = [...new Set(
+            allTableRows
+                .filter(row => row.cells[0]?.textContent.trim() === latestYear)
+                .map(getMonthNumber)
+                .filter(Boolean),
+        )].sort((first, second) => second - first)[0];
+        const defaultMonth = latestMonth
+            ? months.find(month => monthOrder[month] === latestMonth)
+            : '';
 
         filters.forEach(filter => {
             const yearSelect = filter.querySelector('[data-filter="year"]');
@@ -913,6 +956,40 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             years.forEach(year => yearSelect.appendChild(new Option(year, year)));
             months.forEach(month => monthSelect.appendChild(new Option(month, month)));
         });
+
+        const sortTable = (table, header) => {
+            const column = Number(header.dataset.sortColumn);
+            const sortKey = header.dataset.sortKey;
+            const direction = header.getAttribute('aria-sort') === 'ascending' ? -1 : 1;
+            const rows = Array.from(table.tBodies[0].rows);
+            const valueFor = row => row.cells[column]?.textContent.trim() || '';
+            const compare = (first, second) => {
+                if (sortKey === 'year') {
+                    return Number(valueFor(first)) - Number(valueFor(second));
+                }
+                if (sortKey === 'month') {
+                    return getMonthNumber(first) - getMonthNumber(second);
+                }
+                return valueFor(first).localeCompare(valueFor(second), 'de', { sensitivity: 'base' });
+            };
+            rows.sort((first, second) => direction * compare(first, second));
+            table.tBodies[0].append(...rows);
+            table.querySelectorAll('th[data-sortable]').forEach(otherHeader => {
+                otherHeader.removeAttribute('aria-sort');
+            });
+            header.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+        };
+
+        tables.forEach(table => table.querySelectorAll('th[data-sortable]').forEach(header => {
+            const handleSort = () => sortTable(table, header);
+            header.addEventListener('click', handleSort);
+            header.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    handleSort();
+                }
+            });
+        }));
 
         const applyGlobalFilter = (year, month) => {
             filters.forEach(filter => {
@@ -937,6 +1014,7 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 applyGlobalFilter('', '');
             });
         });
+        applyGlobalFilter(latestYear, defaultMonth);
     </script>
 </body>
 </html>

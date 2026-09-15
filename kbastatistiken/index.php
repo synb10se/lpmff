@@ -17,10 +17,29 @@ $generatedHtml = isset($_SESSION['pending_html'])
 $generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
 $hasPendingHtml = isset($_SESSION['pending_html']);
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'download') {
+  if (!$hasPendingHtml) {
+    http_response_code(404);
+    exit('Kein aktuelles Ergebnis zum Herunterladen vorhanden.');
+  }
+
+  header('Content-Type: text/html; charset=UTF-8');
+  header('Content-Disposition: attachment; filename="' . OUTPUT_FILENAME . '"');
+  header('Content-Length: ' . strlen($generatedHtml));
+  echo $generatedHtml;
+  exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_POST['action'] ?? 'generate';
 
-  if ($action === 'save') {
+  if ($action === 'reset') {
+    unset($_SESSION['pending_html'], $_SESSION['generated_html']);
+    $generatedHtml = is_readable(OUTPUT_PATH) ? file_get_contents(OUTPUT_PATH) : '';
+    $generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
+    $hasPendingHtml = false;
+    $notice = 'Die Ansicht wurde zurückgesetzt.';
+  } elseif ($action === 'save') {
     $savePasswordHash = getenv(SAVE_PASSWORD_HASH_ENV);
     if (!isset($_SESSION['pending_html'])) {
       $error = 'Es liegt keine ungespeicherte Statistik vor.';
@@ -105,6 +124,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       padding: 16px;
       margin-bottom: 20px;
     }
+    .action-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .action-row form {
+      margin: 0;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .reset-form {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+    .save-form {
+      background: tomato;
+    }
     .error {
       color: #a00;
       white-space: pre-wrap;
@@ -130,26 +171,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-  <h1>KBA-Statistik auswerten</h1>
+  <div class="page-header">
+    <h1>KBA-Statistik auswerten</h1>
+    <form class="reset-form" action="" method="post">
+      <input type="hidden" name="action" value="reset">
+      <button type="submit" title="Alle aktuellen Eingaben und Ergebnisse zurücksetzen">Zurücksetzen</button>
+    </form>
+  </div>
   <?php if ($error !== null): ?>
     <p class="error"><?= htmlspecialchars($error, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
   <?php endif; ?>
   <?php if ($notice !== null): ?>
     <p class="notice"><?= htmlspecialchars($notice, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
   <?php endif; ?>
-  <form action="" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="action" value="generate">
-    <label for="file1">KBA-CSV-Datei:</label>
-    <input id="file1" type="file" name="file1" accept=".csv,text/csv" required>
-    <button type="submit">Statistik erzeugen</button>
-  </form>
+  <div class="action-row">
+    <form action="" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="generate">
+      <label for="file1">KBA-CSV-Datei:</label>
+      <input id="file1" type="file" name="file1" accept=".csv,text/csv" required>
+      <button type="submit" title="CSV-Datei verarbeiten und eine neue Statistik erzeugen">Statistik erzeugen</button>
+    </form>
+    <?php if ($hasPendingHtml): ?>
+      <form action="" method="get">
+        <input type="hidden" name="action" value="download">
+        <button type="submit" title="Die neu erzeugte Statistik als HTML-Datei herunterladen">HTML-Datei herunterladen</button>
+      </form>
+    <?php endif; ?>
+  </div>
   <?php if ($hasPendingHtml): ?>
-    <form action="" method="post">
+    <form class="save-form" action="" method="post">
       <input type="hidden" name="action" value="save">
       <p>Die neue Statistik wurde erzeugt. Soll <?= htmlspecialchars(OUTPUT_FILENAME, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?> jetzt überschrieben werden?</p>
       <label for="save_password">Passwort:</label>
       <input id="save_password" type="password" name="save_password" required autocomplete="current-password">
-      <button type="submit">Lokales Speichern bestätigen</button>
+      <button type="submit" title="Die neue Statistik nach Passwortprüfung lokal speichern">Lokales Speichern bestätigen</button>
     </form>
   <?php endif; ?>
   <section class="result">
