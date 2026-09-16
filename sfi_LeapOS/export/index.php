@@ -46,70 +46,100 @@ function translateExportContent(string $text): string
         return '';
     }
 
-    $urls = [
-        'https://api.mymemory.translated.net/get?q=' . rawurlencode($trimmed) . '&langpair=de|en',
-        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=en&dt=t&q=' . rawurlencode($trimmed),
-    ];
-
-    foreach ($urls as $serviceUrl) {
-        $response = null;
-
-        if (function_exists('curl_init')) {
-            $ch = curl_init($serviceUrl);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => 8,
-                CURLOPT_TIMEOUT => 15,
-                CURLOPT_USERAGENT => 'Mozilla/5.0',
-                CURLOPT_SSL_VERIFYPEER => true,
-            ]);
-            $response = curl_exec($ch);
-            if ($response === false) {
-                $response = null;
-            }
-            curl_close($ch);
-        }
-
-        if ($response === null && function_exists('file_get_contents')) {
-            try {
-                $response = @file_get_contents($serviceUrl, false, stream_context_create([
-                    'http' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
-                    'https' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
-                ]));
-            } catch (Throwable $exception) {
-                $response = null;
-            }
-        }
-
-        if (!is_string($response) || $response === '') {
-            continue;
-        }
-
-        try {
-            $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-        } catch (Throwable $exception) {
-            continue;
-        }
-
-        if (isset($decoded['responseData']['translatedText']) && is_string($decoded['responseData']['translatedText']) && trim($decoded['responseData']['translatedText']) !== '') {
-            return trim($decoded['responseData']['translatedText']);
-        }
-
-        if (isset($decoded[0]) && is_array($decoded[0])) {
-            $parts = [];
-            foreach ($decoded[0] as $part) {
-                if (isset($part[0]) && is_string($part[0])) {
-                    $parts[] = $part[0];
-                }
-            }
-            $combined = trim(implode('', $parts));
-            if ($combined !== '') {
-                return $combined;
-            }
-        }
+    $sentences = preg_split('/(?<=[.!?])\s+/', $trimmed, -1, PREG_SPLIT_NO_EMPTY);
+    if ($sentences === false || $sentences === []) {
+        $sentences = [$trimmed];
     }
 
-    return $trimmed;
+    $chunks = [];
+    $current = '';
+    foreach ($sentences as $sentence) {
+        $candidate = $current === '' ? $sentence : $current . ' ' . $sentence;
+        if (mb_strlen($candidate) <= 500) {
+            $current = $candidate;
+            continue;
+        }
+        if ($current !== '') {
+            $chunks[] = $current;
+        }
+        $current = $sentence;
+    }
+    if ($current !== '') {
+        $chunks[] = $current;
+    }
+
+    $translatedParts = [];
+    foreach ($chunks as $chunk) {
+        $translated = null;
+        $urls = [
+            'https://api.mymemory.translated.net/get?q=' . rawurlencode($chunk) . '&langpair=de|en',
+            'https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=en&dt=t&q=' . rawurlencode($chunk),
+        ];
+
+        foreach ($urls as $serviceUrl) {
+            $response = null;
+
+            if (function_exists('curl_init')) {
+                $ch = curl_init($serviceUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CONNECTTIMEOUT => 8,
+                    CURLOPT_TIMEOUT => 15,
+                    CURLOPT_USERAGENT => 'Mozilla/5.0',
+                    CURLOPT_SSL_VERIFYPEER => true,
+                ]);
+                $response = curl_exec($ch);
+                if ($response === false) {
+                    $response = null;
+                }
+                curl_close($ch);
+            }
+
+            if ($response === null && function_exists('file_get_contents')) {
+                try {
+                    $response = @file_get_contents($serviceUrl, false, stream_context_create([
+                        'http' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
+                        'https' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
+                    ]));
+                } catch (Throwable $exception) {
+                    $response = null;
+                }
+            }
+
+            if (!is_string($response) || $response === '') {
+                continue;
+            }
+
+            try {
+                $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+            } catch (Throwable $exception) {
+                continue;
+            }
+
+            if (isset($decoded['responseData']['translatedText']) && is_string($decoded['responseData']['translatedText']) && trim($decoded['responseData']['translatedText']) !== '') {
+                $translated = trim($decoded['responseData']['translatedText']);
+                break;
+            }
+
+            if (isset($decoded[0]) && is_array($decoded[0])) {
+                $parts = [];
+                foreach ($decoded[0] as $part) {
+                    if (isset($part[0]) && is_string($part[0])) {
+                        $parts[] = $part[0];
+                    }
+                }
+                $combined = trim(implode('', $parts));
+                if ($combined !== '') {
+                    $translated = $combined;
+                    break;
+                }
+            }
+        }
+
+        $translatedParts[] = $translated !== null ? $translated : $chunk;
+    }
+
+    return trim(implode(' ', $translatedParts));
 }
 
 function exportRowForDisplay(array $item): array
