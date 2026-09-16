@@ -17,8 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
   $validPassword = false;
   if ($password !== '' && is_readable($passwordFile)) {
     foreach (file($passwordFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+      $line = trim($line);
       $parts = explode(':', $line, 2);
-      if (count($parts) === 2 && password_verify($password, trim($parts[1]))) {
+      $hash = count($parts) === 2 ? trim($parts[1]) : $line;
+      if (password_verify($password, $hash)) {
         $validPassword = true;
         break;
       }
