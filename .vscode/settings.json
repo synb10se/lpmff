@@ -1,0 +1,45 @@
+{
+  "php.validate.executablePath": "/Applications/MAMP/bin/php/php8.4.1/bin/php"
+    "deploy.reloaded": {
+        
+        "packages": [
+        {
+            "name": "KBA website",
+            "files": [
+                "kbastatistiken/.htaccess",
+                "kbastatistiken/index.php",
+                "kbastatistiken/csv2html.py"
+            ]
+        },
+       {
+            "name": "SFI-LeapOS website",
+            "files": [
+                "sfi_LeapOS/.htaccess",
+                "sfi_LeapOS/index.php",
+                "sfi_LeapOS/lib.php",
+                "sfi_LeapOS/style.css",
+                "sfi_LeapOS/admin/**",
+                "sfi_LeapOS/data/**"
+            ]
+        }
+        ],
+        "targets": [
+        {
+            "type": "ftp",
+            "name": "synvoll.cn",
+            "dir": "/",
+            "host": "web114.alfahosting-server.de",
+            "port": 21,
+            "user": "h331132_lpmmf",
+            "password": "lpmmf@w!k!"
+        },
+        {
+            "type": "local",
+            "name": "MAMP",
+            "dir": "/Applications/MAMP/htdocs"
+        }
+        ],
+        "deployOnSave": true
+    },
+
+}

@@ -1,0 +1,5 @@
+AuthType Basic
+AuthName "Vorschlaege bearbeiten"
+# Diesen Pfad beim Server-Setup auf die absolute .htpasswd-Datei anpassen.
+AuthUserFile /var/www/sfi_LeapOS/.htpasswd
+Require valid-user

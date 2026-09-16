@@ -1,3 +1,4 @@
 .DS_Store
 kbastatistiken/__pycache__/**
 kbastatistiken/.htaccess
+sfi_LeapOS/.htpasswd
