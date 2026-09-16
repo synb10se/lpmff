@@ -39,95 +39,91 @@ if (!$authenticated) {
     exit;
 }
 
-function englishText(string $text): string
+function translateExportContent(string $text): string
 {
-    $phrases = [
-        'Verbesserungsvorschläge' => 'Improvement suggestions',
-        'Verbesserungsvorschlag' => 'Improvement suggestion',
-        'Benutzeroberfläche' => 'user interface',
-        'Benutzeroberflächen' => 'user interfaces',
-        'nicht möglich' => 'not possible',
-        'nicht verfügbar' => 'not available',
-        'zur Verfügung' => 'available',
-        'zurücksetzen' => 'reset',
-        'hinzufügen' => 'add',
-        'auswählen' => 'select',
-    ];
-    uksort($phrases, static fn (string $left, string $right): int => mb_strlen($right) <=> mb_strlen($left));
-    foreach ($phrases as $german => $english) {
-        $text = preg_replace('/(?<!\p{L})' . preg_quote($german, '/') . '(?!\p{L})/iu', $english, $text) ?? $text;
+    $trimmed = trim($text);
+    if ($trimmed === '') {
+        return '';
     }
 
-    $translations = [
-        'Verbesserungsvorschlag' => 'Improvement suggestion',
-        'Verbesserungsvorschläge' => 'Improvement suggestions',
-        'Verbesserung' => 'Improvement',
-        'Vorschlag' => 'Suggestion',
-        'Vorschläge' => 'Suggestions',
-        'Thema' => 'Topic',
-        'Problem' => 'Problem',
-        'Fehler' => 'Error',
-        'Lösung' => 'Solution',
-        'Anzeige' => 'Display',
-        'Ansicht' => 'View',
-        'Benutzer' => 'User',
-        'Benutzung' => 'Usage',
-        'Funktion' => 'Feature',
-        'Funktionen' => 'Features',
-        'Einstellung' => 'setting',
-        'Einstellungen' => 'settings',
-        'Meldung' => 'message',
-        'Nachricht' => 'message',
-        'Daten' => 'data',
-        'Lautstärke' => 'volume',
-        'Ton' => 'sound',
-        'Navigation' => 'navigation',
-        'Verbindung' => 'connection',
-        'Laden' => 'charging',
-        'Reichweite' => 'range',
-        'Verbrauch' => 'consumption',
-        'Klimaanlage' => 'air conditioning',
-        'Heizung' => 'heating',
-        'Tastatur' => 'keyboard',
-        'Touchscreen' => 'touchscreen',
-        'nicht' => 'not',
-        'und' => 'and',
-        'oder' => 'or',
-        'mit' => 'with',
-        'ohne' => 'without',
-        'für' => 'for',
-        'von' => 'of',
-        'bei' => 'when',
-        'kann' => 'can',
-        'soll' => 'should',
-        'muss' => 'must',
-        'werden' => 'become',
-        'wird' => 'will be',
-        'sein' => 'be',
-        'ist' => 'is',
-        'sind' => 'are',
-        'ein' => 'a',
-        'eine' => 'a',
-        'neue' => 'new',
-        'neu' => 'new',
-        'besser' => 'better',
-        'verbessern' => 'improve',
-        'ermöglichen' => 'enable',
-        'hinzufügen' => 'add',
-        'ändern' => 'change',
-        'löschen' => 'delete',
+    $payload = [
+        'q' => $trimmed,
+        'source' => 'de',
+        'target' => 'en',
+        'format' => 'text',
     ];
-    return preg_replace_callback('/\b[\p{L}ÄÖÜäöüß]+\b/u', static function (array $match) use ($translations): string {
-        $word = $match[0];
-        $lowerWord = mb_strtolower($word);
-        $translated = $translations[$word] ?? $translations[$lowerWord] ?? null;
-        if ($translated === null) {
-            return $word;
+
+    $serviceUrl = 'https://translate.argosopentech.com/translate';
+    $response = null;
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($serviceUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_THROW_ON_ERROR),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+        ]);
+        $response = curl_exec($ch);
+        if ($response === false) {
+            $response = null;
         }
-        return mb_strtoupper(mb_substr($word, 0, 1)) === mb_substr($word, 0, 1)
-            ? ucfirst($translated)
-            : $translated;
-    }, $text) ?? $text;
+        curl_close($ch);
+    }
+
+    if ($response === null && function_exists('file_get_contents')) {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                'content' => json_encode($payload, JSON_THROW_ON_ERROR),
+                'timeout' => 15,
+            ],
+            'https' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                'content' => json_encode($payload, JSON_THROW_ON_ERROR),
+                'timeout' => 15,
+            ],
+        ]);
+
+        try {
+            $response = @file_get_contents($serviceUrl, false, $context);
+        } catch (Throwable $exception) {
+            $response = null;
+        }
+    }
+
+    if (!is_string($response) || $response === '') {
+        return $trimmed;
+    }
+
+    try {
+        $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+    } catch (Throwable $exception) {
+        return $trimmed;
+    }
+
+    $translated = $decoded['translatedText'] ?? null;
+    if (!is_string($translated) || trim($translated) === '') {
+        return $trimmed;
+    }
+
+    return $translated;
+}
+
+function exportRowForDisplay(array $item): array
+{
+    return [
+        'topic' => translateExportContent((string) ($item['topic'] ?? '')),
+        'model' => (string) ($item['model'] ?? ''),
+        'suggestion' => translateExportContent((string) ($item['suggestion'] ?? '')),
+    ];
 }
 
 function selectedReviewedSuggestions(array $suggestions): array
@@ -140,7 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
     $items = selectedReviewedSuggestions(loadSuggestions());
     $rows = [['Thema', 'Modell', 'Vorschlag']];
     foreach ($items as $item) {
-        $rows[] = [englishText((string) ($item['topic'] ?? '')), (string) ($item['model'] ?? ''), englishText((string) ($item['suggestion'] ?? ''))];
+        $translated = exportRowForDisplay($item);
+        $rows[] = [$translated['topic'], $translated['model'], $translated['suggestion']];
     }
     if ($_POST['action'] === 'csv') {
         header('Content-Type: text/csv; charset=UTF-8');
@@ -177,6 +174,6 @@ $items = array_values(array_filter(loadSuggestions(), static fn (array $item): b
     <section class="admin-panel"><p class="export-note">Einzelne Einträge oder alle geprüften Einträge auswählen und anschließend ein Exportformat wählen.</p><form class="export-actions" method="post"><label class="select-all"><input id="select-all" type="checkbox"> Alle auswählen</label><button class="small-button" name="action" value="csv" type="submit">CSV exportieren</button><button class="small-button" name="action" value="excel" type="submit">Excel exportieren</button>
   <?php foreach ($items as $item): ?><input class="export-id" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" hidden><?php endforeach; ?></form></section>
     <section class="table-section"><div class="section-heading"><div><p class="eyebrow">Übersicht</p><h2>Englische Übersetzung</h2></div><span class="count-badge"><?= count($items) ?> Einträge</span></div><div class="table-wrap"><table><thead><tr><th>Auswahl</th><th>Thema</th><th>Modell</th><th>Vorschlag</th></tr></thead><tbody>
-    <?php if ($items === []): ?><tr><td class="empty-state" colspan="4">Keine geprüften Vorschläge vorhanden.</td></tr><?php else: foreach ($items as $item): ?><tr><td class="check-cell"><input class="row-select" type="checkbox" value="<?= e($item['id'] ?? '') ?>" aria-label="Eintrag auswählen"></td><td data-label="Thema"><?= e(englishText((string) ($item['topic'] ?? ''))) ?></td><td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td><td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e(englishText((string) ($item['suggestion'] ?? '')))) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
+    <?php if ($items === []): ?><tr><td class="empty-state" colspan="4">Keine geprüften Vorschläge vorhanden.</td></tr><?php else: foreach ($items as $item): $translated = exportRowForDisplay($item); ?><tr><td class="check-cell"><input class="row-select" type="checkbox" value="<?= e($item['id'] ?? '') ?>" aria-label="Eintrag auswählen"></td><td data-label="Thema"><?= e($translated['topic']) ?></td><td data-label="Modell"><span class="model-tag"><?= e($translated['model']) ?></span></td><td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($translated['suggestion'])) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
   <script>const all=document.getElementById('select-all');const rows=[...document.querySelectorAll('.row-select')];const hidden=[...document.querySelectorAll('.export-id')];function sync(){rows.forEach((row,i)=>{hidden[i].checked=row.checked});all.checked=rows.length>0&&rows.every(row=>row.checked)}rows.forEach(row=>row.addEventListener('change',sync));all.addEventListener('change',()=>{rows.forEach(row=>row.checked=all.checked);sync()});</script>
 </main></body></html>
