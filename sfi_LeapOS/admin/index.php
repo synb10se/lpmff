@@ -169,7 +169,7 @@ $suggestions = loadSuggestions();
           <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
-              <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" aria-label="Eintrag auswählen"></td>
+              <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="Eintrag auswählen"></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
               <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>
@@ -198,6 +198,7 @@ $suggestions = loadSuggestions();
       topic.value = single ? single.dataset.topic : '';
       model.value = single ? single.dataset.model : '<?= e(MODELS[0]) ?>';
       suggestion.value = single ? single.dataset.suggestion : '';
+      document.getElementById('bulk-status').value = single ? single.dataset.status : '';
       topic.disabled = !single;
       model.disabled = !single;
       suggestion.disabled = !single;
