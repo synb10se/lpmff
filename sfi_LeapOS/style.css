@@ -11,6 +11,7 @@ h1, h2 { margin: 0; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0;
 h1 { font-size: clamp(2.3rem, 5vw, 4.4rem); line-height: .98; max-width: 800px; }
 h2 { font-size: 1.55rem; }
 .intro { margin: 16px 0 0; color: var(--muted); font-size: 1.05rem; }
+.area-links { display: flex; gap: 32px; flex-wrap: wrap; align-items: center; }
 .admin-link { color: var(--teal-dark); border-bottom: 1px solid var(--teal); padding: 5px 0; font-weight: 700; text-decoration: none; }
 .form-panel, .table-section { background: rgba(255,255,255,.88); border: 1px solid var(--line); box-shadow: 0 12px 35px rgba(29, 58, 61, .07); }
 .form-panel { padding: 32px; margin-bottom: 58px; border-top: 5px solid var(--yellow); }
