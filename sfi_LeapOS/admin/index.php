@@ -86,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $item['topic'] = $topic;
                     $item['model'] = $model;
                     $item['suggestion'] = $suggestion;
-                    $item['status'] = $status;
+                  $item['status'] = ($item['status'] ?? 'erfasst') === 'erfasst' && $status === 'erfasst'
+                    ? 'geprüft'
+                    : $status;
                     $changed = true;
                     break;
                 }
@@ -136,7 +138,7 @@ $suggestions = loadSuggestions();
   <main class="page-shell">
     <header class="page-header">
       <div><p class="eyebrow">Geschützter Bereich</p><h1>Vorschläge bearbeiten</h1><p class="intro">Einträge prüfen, weiterleiten und ihren Status aktuell halten.</p></div>
-      <a class="admin-link" href="../">Zur öffentlichen Ansicht</a>
+      <div><a class="admin-link" href="../">Zur öffentlichen Ansicht</a><a class="admin-link" href="../export/">Export</a></div>
     </header>
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>

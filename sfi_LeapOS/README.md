@@ -19,4 +19,6 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
 
+Unter `…/export` gibt es eine weitere passwortgeschützte Seite. Sie zeigt ausschließlich Einträge mit dem Status `geprüft` auf Englisch und erlaubt den Export ausgewählter oder aller Einträge als CSV bzw. Excel-kompatible `.xls`-Datei.
+
 Beim Deployment müssen versteckte Dateien wie `.htaccess` ausdrücklich im Dateipaket enthalten sein. Die VS-Code-Deployment-Konfiguration enthält deshalb `admin/.htaccess` und `data/.htaccess` explizit. `data/suggestions.json` ist absichtlich nicht im Deployment-Paket: Diese Datei enthält die laufenden Vorschläge und darf bei Code-Deployments nicht überschrieben werden.

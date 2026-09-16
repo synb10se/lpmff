@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 const SUGGESTION_FILE = __DIR__ . '/data/suggestions.json';
 const MODELS = ['B03X', 'B05', 'B10', 'C10', 'T03'];
-const STATUSES = ['erfasst', 'versendet', 'abgelehnt', 'bestätigt', 'angekündigt', 'verfügbar'];
+const STATUSES = ['erfasst', 'geprüft', 'versendet', 'abgelehnt', 'bestätigt', 'angekündigt', 'verfügbar'];
 
 function loadSuggestions(): array
 {
