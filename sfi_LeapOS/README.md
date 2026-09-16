@@ -13,8 +13,10 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
    htpasswd -c /Applications/MAMP/access/sfi_LeapOS/.htpasswd admin
    ```
 
-3. Die mitgelieferte `…/admin/.htaccess` wählt den Pfad anhand des Hosts automatisch: `localhost` und `127.0.0.1` verwenden MAMP, andere Hosts den Alfahosting-Pfad. Der Ordner `admin` ist dann über HTTP Basic Authentication geschützt.
+3. Die Adminseite liest die `.htpasswd` anhand des Hosts: `localhost` und `127.0.0.1` verwenden MAMP, andere Hosts den Alfahosting-Pfad. Die Anmeldung fragt aus Komfortgründen nur das Passwort ab; der Benutzername aus der `.htpasswd` wird nicht benötigt. Die `admin/.htaccess` verhindert dabei keine PHP-Ausführung und schützt den Ordner nicht selbst per HTTP Basic Authentication.
 4. `AllowOverride AuthConfig` (oder `AllowOverride All`) für dieses Verzeichnis aktivieren und `mod_auth_basic`/`mod_authn_file` laden.
 
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
+
+Beim Deployment müssen versteckte Dateien wie `.htaccess` ausdrücklich im Dateipaket enthalten sein. Die VS-Code-Deployment-Konfiguration enthält deshalb `admin/.htaccess` und `data/.htaccess` zusätzlich zu den jeweiligen Ordner-Mustern.

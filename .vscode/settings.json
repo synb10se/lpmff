@@ -18,7 +18,9 @@
                 "sfi_LeapOS/index.php",
                 "sfi_LeapOS/lib.php",
                 "sfi_LeapOS/style.css",
+                "sfi_LeapOS/admin/.htaccess",
                 "sfi_LeapOS/admin/**",
+                "sfi_LeapOS/data/.htaccess",
                 "sfi_LeapOS/data/**"
             ]
         }

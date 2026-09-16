@@ -1,11 +1,3 @@
-AuthType Basic
-AuthName "Vorschlaege bearbeiten"
-# MAMP: http://localhost bzw. http://127.0.0.1
-<If "%{HTTP_HOST} =~ m#^(localhost|127\.0\.0\.1)(:[0-9]+)?$#">
-	AuthUserFile /Applications/MAMP/access/sfi_LeapOS/.htpasswd
-</If>
-# Alfahosting und alle anderen Hosts
-<If "%{HTTP_HOST} !~ m#^(localhost|127\.0\.0\.1)(:[0-9]+)?$#">
-	AuthUserFile /var/www/vhosts/h331132.web114.alfahosting-server.de/access/sfi_LeapOS/.htpasswd
-</If>
-Require valid-user
+# Die reine Passwortabfrage erfolgt in admin/index.php.
+# Die .htpasswd-Datei bleibt außerhalb des Webverzeichnisses.
+Require all granted

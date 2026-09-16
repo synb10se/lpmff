@@ -1,9 +1,55 @@
 <?php
 declare(strict_types=1);
+session_start();
 require dirname(__DIR__) . '/lib.php';
 
 $error = null;
 $notice = null;
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$isLocalHost = preg_match('/^(localhost|127\.0\.0\.1)(:[0-9]+)?$/', $host) === 1;
+$passwordFile = $isLocalHost
+  ? '/Applications/MAMP/access/sfi_LeapOS/.htpasswd'
+  : '/var/www/vhosts/h331132.web114.alfahosting-server.de/access/sfi_LeapOS/.htpasswd';
+$authenticated = ($_SESSION['suggestions_admin_authenticated'] ?? false) === true;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
+  $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+  $validPassword = false;
+  if ($password !== '' && is_readable($passwordFile)) {
+    foreach (file($passwordFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+      $parts = explode(':', $line, 2);
+      if (count($parts) === 2 && password_verify($password, trim($parts[1]))) {
+        $validPassword = true;
+        break;
+      }
+    }
+  }
+  if ($validPassword) {
+    session_regenerate_id(true);
+    $_SESSION['suggestions_admin_authenticated'] = true;
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'] ?? 'index.php', '?'));
+    exit;
+  }
+  $error = 'Das Passwort ist nicht korrekt.';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'logout') {
+  $_SESSION = [];
+  session_destroy();
+  header('Location: ' . strtok($_SERVER['REQUEST_URI'] ?? 'index.php', '?'));
+  exit;
+}
+
+if (!$authenticated) {
+  ?>
+  <!DOCTYPE html>
+  <html lang="de">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css"></head>
+  <body><main class="page-shell"><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow">Geschützter Bereich</p><h1 style="font-size: 2.5rem;">Bearbeitung</h1><p class="intro">Bitte Passwort eingeben, um die Vorschläge zu bearbeiten.</p>
+  <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
+  <form method="post"><input type="hidden" name="action" value="login"><label for="password">Passwort<input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit">Anmelden</button></form>
+  </section></main></body></html>
+  <?php
+  exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
