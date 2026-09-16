@@ -19,4 +19,4 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
 
-Beim Deployment müssen versteckte Dateien wie `.htaccess` ausdrücklich im Dateipaket enthalten sein. Die VS-Code-Deployment-Konfiguration enthält deshalb `admin/.htaccess` und `data/.htaccess` zusätzlich zu den jeweiligen Ordner-Mustern.
+Beim Deployment müssen versteckte Dateien wie `.htaccess` ausdrücklich im Dateipaket enthalten sein. Die VS-Code-Deployment-Konfiguration enthält deshalb `admin/.htaccess` und `data/.htaccess` explizit. `data/suggestions.json` ist absichtlich nicht im Deployment-Paket: Diese Datei enthält die laufenden Vorschläge und darf bei Code-Deployments nicht überschrieben werden.
