@@ -177,17 +177,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
         fclose($output);
         exit;
     }
-    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-    header('Content-Disposition: attachment; filename="reviewed-suggestions-en.xls"');
-    echo "<html><head><meta charset=\"UTF-8\"></head><body><table border=\"1\">";
-    foreach ($rows as $row) {
-        echo '<tr>';
-        foreach ($row as $cell) {
-            echo '<td>' . e($cell) . '</td>';
+
+    $xml = new XMLWriter();
+    $xml->openMemory();
+    $xml->setIndent(false);
+    $xml->startDocument('1.0', 'UTF-8');
+    $xml->startElement('worksheet');
+    $xml->writeAttribute('xmlns', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+    $xml->startElement('sheetData');
+    foreach ($rows as $rowIndex => $row) {
+        $xml->startElement('row');
+        $xml->writeAttribute('r', (string) ($rowIndex + 1));
+        foreach ($row as $cellIndex => $cell) {
+            $column = chr(65 + $cellIndex);
+            $xml->startElement('c');
+            $xml->writeAttribute('r', $column . ($rowIndex + 1));
+            $xml->writeAttribute('t', 'inlineStr');
+            $xml->writeAttribute('s', '1');
+            $xml->startElement('is');
+            $xml->writeElement('t', str_replace("\n", ' ', (string) $cell));
+            $xml->endElement();
+            $xml->endElement();
         }
-        echo '</tr>';
+        $xml->endElement();
     }
-    echo '</table></body></html>';
+    $xml->endElement();
+    $xml->endElement();
+    $xml->endDocument();
+    $sheetXml = $xml->outputMemory(true);
+
+    $stylesXml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="1">
+    <font>
+      <sz val="11"/>
+      <name val="Calibri"/>
+      <family val="2"/>
+    </font>
+  </fonts>
+  <fills count="1">
+    <fill><patternFill patternType="none"/></fill>
+  </fills>
+  <borders count="1">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+  </borders>
+  <cellXfs count="2">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">
+      <alignment vertical="top"/>
+    </xf>
+  </cellXfs>
+</styleSheet>
+XML;
+
+    $zip = new ZipArchive();
+    $tmpFile = tempnam(sys_get_temp_dir(), 'reviewed_suggestions_');
+    if ($tmpFile === false) {
+        http_response_code(500);
+        exit('Export konnte nicht erstellt werden.');
+    }
+    $zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('[Content_Types].xml', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>
+XML
+    );
+    $zip->addFromString('_rels/.rels', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>
+XML
+    );
+    $zip->addFromString('docProps/core.xml', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>LeapOS</dc:creator><cp:lastModifiedBy>LeapOS</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">2026-09-16T00:00:00Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2026-09-16T00:00:00Z</dcterms:modified></cp:coreProperties>
+XML
+    );
+    $zip->addFromString('docProps/app.xml', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>LeapOS</Application></Properties>
+XML
+    );
+    $zip->addFromString('xl/workbook.xml', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Suggestions" sheetId="1" r:id="rId1"/></sheets></workbook>
+XML
+    );
+    $zip->addFromString('xl/_rels/workbook.xml.rels', <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>
+XML
+    );
+    $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+    $zip->addFromString('xl/styles.xml', $stylesXml);
+    $zip->close();
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="reviewed-suggestions-en.xlsx"');
+    readfile($tmpFile);
+    unlink($tmpFile);
     exit;
 }
 
