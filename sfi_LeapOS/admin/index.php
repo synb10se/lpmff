@@ -10,6 +10,10 @@ $isLocalHost = preg_match('/^(localhost|127\.0\.0\.1)(:[0-9]+)?$/', $host) === 1
 $passwordFile = $isLocalHost
   ? '/Applications/MAMP/access/sfi_LeapOS/.htpasswd'
   : '/var/www/vhosts/h331132.web114.alfahosting-server.de/access/sfi_LeapOS/.htpasswd';
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['reauth'])) {
+  unset($_SESSION['suggestions_admin_authenticated']);
+}
 $authenticated = ($_SESSION['suggestions_admin_authenticated'] ?? false) === true;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
@@ -58,11 +62,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $suggestions = loadSuggestions();
     $changed = false;
 
+    $ids = is_array($_POST['ids'] ?? null) ? array_map(static fn (mixed $id): string => cleanText($id, 32), $_POST['ids']) : [];
+
     if ($action === 'delete') {
-        $id = cleanText($_POST['id'] ?? '', 32);
-        $suggestions = array_values(array_filter($suggestions, static fn (array $item): bool => ($item['id'] ?? '') !== $id));
+      if ($ids === []) {
+        $error = 'Bitte mindestens eine Zeile auswählen.';
+      } else {
+        $suggestions = array_values(array_filter($suggestions, static fn (array $item): bool => !in_array($item['id'] ?? '', $ids, true)));
         $changed = true;
-        $notice = 'Der Eintrag wurde gelöscht.';
+        $notice = 'Die ausgewählten Einträge wurden gelöscht.';
+      }
     } elseif ($action === 'edit') {
         $id = cleanText($_POST['id'] ?? '', 32);
         $topic = cleanText($_POST['topic'] ?? '', 256);
@@ -87,8 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'bulk_status') {
         $status = cleanText($_POST['status'] ?? '', 30);
-        $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
-        if (!in_array($status, STATUSES, true)) {
+      if ($ids === [] || !in_array($status, STATUSES, true)) {
             $error = 'Bitte einen gültigen Status auswählen.';
         } else {
             foreach ($suggestions as &$item) {
@@ -119,9 +127,9 @@ $suggestions = loadSuggestions();
   <link rel="stylesheet" href="../style.css">
   <style>
     .admin-panel { margin-bottom: 34px; padding: 22px; background: #e8f2ef; border: 1px solid #c6dfd9; }
-    .bulk-form { display: flex; align-items: end; gap: 14px; flex-wrap: wrap; }
-    .bulk-form label { min-width: 220px; }.bulk-form select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.row-form input, .row-form select, .row-form textarea { min-width: 120px; padding: 9px; font-size: .88rem; }.row-form textarea { min-width: 250px; min-height: 70px; }.row-form { display: grid; gap: 8px; }.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: middle; }
-    @media (max-width: 700px) { .admin-table td { display: block; }.admin-table td::before { display: none; }.row-form textarea { min-width: 100%; } }
+    .admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1.1fr .7fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
+    @media (max-width: 800px) { .edit-fields { grid-template-columns: 1fr; }.edit-suggestion { grid-column: auto; } }
+    @media (max-width: 700px) { .admin-table td { display: block; }.admin-table td::before { display: block; }.check-cell { display: block; }.action-row { align-items: stretch; flex-direction: column; }.action-row label, .action-row button { width: 100%; } }
   </style>
 </head>
 <body>
@@ -134,37 +142,39 @@ $suggestions = loadSuggestions();
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
     <section class="admin-panel">
-      <form id="bulk-form" class="bulk-form" method="post">
-        <input type="hidden" name="action" value="bulk_status">
-        <label for="bulk-status">Status für ausgewählte Zeilen
-          <select id="bulk-status" name="status" required><option value="">Bitte auswählen</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select>
-        </label>
-        <button class="small-button" type="submit">Status ändern</button>
+      <form id="selection-form" class="admin-actions" method="post">
+        <input id="selected-id" type="hidden" name="id" value="">
+        <div class="edit-fields">
+          <label for="edit-topic">Thema<input id="edit-topic" name="topic" type="text" maxlength="256" disabled></label>
+          <label for="edit-model">Modell<select id="edit-model" name="model" disabled><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+          <label class="edit-suggestion" for="edit-suggestion">Vorschlag<textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
+        </div>
+        <div class="action-row">
+          <label for="bulk-status">Status ändern<select id="bulk-status" name="status"><option value="">Bitte auswählen</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
+          <button class="small-button" name="action" value="bulk_status" type="submit">Status ändern</button>
+          <button class="small-button" name="action" value="edit" type="submit" disabled id="save-button">Änderungen speichern</button>
+          <button class="small-button danger-button" name="action" value="delete" type="submit" onclick="return confirm('Die ausgewählten Einträge wirklich löschen?');">Löschen</button>
+          <button class="small-button secondary-button" name="action" value="logout" type="submit">Abmelden</button>
+        </div>
       </form>
+      <p id="selection-help" class="selection-help">Bitte eine Zeile auswählen.</p>
     </section>
 
     <section class="table-section">
       <div class="section-heading"><div><p class="eyebrow">Verwaltung</p><h2><?= count($suggestions) ?> Einträge</h2></div></div>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Auswahl</th><th>Erfasst am</th><th>Bearbeiten</th><th>Aktionen</th></tr></thead>
+          <thead><tr><th>Auswahl</th><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>Vorschlag</th><th>Status</th></tr></thead>
           <tbody>
-          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="4">Noch keine Vorschläge erfasst.</td></tr>
+          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
-              <td class="check-cell"><input form="bulk-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" aria-label="Eintrag auswählen"></td>
-              <td><?= e(formatDate($item['created_at'] ?? '')) ?></td>
-              <td>
-                <form class="row-form" method="post">
-                  <input type="hidden" name="action" value="edit"><input type="hidden" name="id" value="<?= e($item['id'] ?? '') ?>">
-                  <input name="topic" maxlength="256" value="<?= e($item['topic'] ?? '') ?>" aria-label="Thema" required>
-                  <select name="model" aria-label="Modell" required><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"<?= ($item['model'] ?? '') === $model ? ' selected' : '' ?>><?= e($model) ?></option><?php endforeach; ?></select>
-                  <textarea name="suggestion" aria-label="Vorschlag" required><?= e($item['suggestion'] ?? '') ?></textarea>
-                  <select name="status" aria-label="Status" required><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"<?= ($item['status'] ?? '') === $status ? ' selected' : '' ?>><?= e($status) ?></option><?php endforeach; ?></select>
-                  <button class="small-button" type="submit">Änderung speichern</button>
-                </form>
-              </td>
-              <td><form method="post" onsubmit="return confirm('Diesen Eintrag wirklich löschen?');"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= e($item['id'] ?? '') ?>"><button class="small-button danger-button" type="submit">Löschen</button></form></td>
+              <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" aria-label="Eintrag auswählen"></td>
+              <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
+              <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>
+              <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
+              <td data-label="Status"><span class="status status-<?= e($item['status'] ?? 'erfasst') ?>"><?= e($item['status'] ?? 'erfasst') ?></span></td>
             </tr>
           <?php endforeach; endif; ?>
           </tbody>
@@ -172,5 +182,40 @@ $suggestions = loadSuggestions();
       </div>
     </section>
   </main>
+  <script>
+    const selectionForm = document.getElementById('selection-form');
+    const checkboxes = [...document.querySelectorAll('input[name="ids[]"]')];
+    const topic = document.getElementById('edit-topic');
+    const model = document.getElementById('edit-model');
+    const suggestion = document.getElementById('edit-suggestion');
+    const selectedId = document.getElementById('selected-id');
+    const saveButton = document.getElementById('save-button');
+    const selectionHelp = document.getElementById('selection-help');
+    function updateSelection() {
+      const selected = checkboxes.filter((checkbox) => checkbox.checked);
+      const single = selected.length === 1 ? selected[0] : null;
+      selectedId.value = single ? single.value : '';
+      topic.value = single ? single.dataset.topic : '';
+      model.value = single ? single.dataset.model : '<?= e(MODELS[0]) ?>';
+      suggestion.value = single ? single.dataset.suggestion : '';
+      topic.disabled = !single;
+      model.disabled = !single;
+      suggestion.disabled = !single;
+      saveButton.disabled = !single;
+      selectionHelp.textContent = selected.length === 0 ? 'Bitte eine Zeile auswählen.' : (single ? 'Eine Zeile ausgewählt: Felder können bearbeitet werden.' : selected.length + ' Zeilen ausgewählt: Status ändern oder löschen ist möglich.');
+    }
+    checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+    selectionForm.addEventListener('submit', (event) => {
+      const selected = checkboxes.filter((checkbox) => checkbox.checked);
+      if (selected.length === 0 && event.submitter?.value !== 'logout') {
+        event.preventDefault();
+        selectionHelp.textContent = 'Bitte mindestens eine Zeile auswählen.';
+      }
+      if (event.submitter?.value === 'edit' && selected.length !== 1) {
+        event.preventDefault();
+        selectionHelp.textContent = 'Zum Speichern genau eine Zeile auswählen.';
+      }
+    });
+  </script>
 </body>
 </html>

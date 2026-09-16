@@ -57,7 +57,7 @@ $suggestions = array_reverse(loadSuggestions());
         <h1>Verbesserungsvorschläge</h1>
         <p class="intro">Ideen sammeln, sichtbar machen und gemeinsam weiterentwickeln.</p>
       </div>
-      <a class="admin-link" href="admin/">Bearbeitung</a>
+      <a class="admin-link" href="admin/?reauth=1">Bearbeitung</a>
     </header>
 
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
