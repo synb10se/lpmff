@@ -97,7 +97,7 @@ $suggestions = array_reverse(loadSuggestions());
       </form>
     </details>
 
-    <section class="table-section" aria-labelledby="list-title">
+    <section class="table-section public-table-section" aria-labelledby="list-title">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Übersicht</p>
