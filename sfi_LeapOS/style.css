@@ -19,12 +19,14 @@ h2 { font-size: 1.55rem; }
 .form-collapsible > summary::-webkit-details-marker { display: none; }
 .form-toggle { display: flex; align-items: center; gap: 18px; }
 .form-toggle .eyebrow { margin: 0; }
-.form-toggle .required-note { margin-left: auto; }
 .toggle-icon { color: var(--teal); font-size: 1.5rem; line-height: 1; }
+.toggle-icon { margin-left: auto; }
 .toggle-icon::before { content: '+'; }
 .form-collapsible[open] .toggle-icon::before { content: '\2212'; }
 .form-content { margin-top: 28px; }
-.form-content h2 { margin-bottom: 28px; }
+.form-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
+.form-heading h2 { flex: 1; text-align: left; }
+.form-heading .required-note { margin-left: auto; text-align: right; }
 .table-section { padding: 32px; }
 .section-heading { margin-bottom: 28px; }
 .table-section > .section-heading { margin: -32px -32px 28px; padding: 24px 32px; background: rgba(255,255,255,.98); border-bottom: 1px solid var(--line); }
@@ -50,4 +52,4 @@ th { padding: 13px 14px; color: var(--muted); border-bottom: 2px solid var(--lin
 .table-section thead th { position: sticky; top: 0; z-index: 2; background: rgba(255,255,255,.98); }
 td { padding: 17px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }.suggestion-cell { min-width: 280px; line-height: 1.5; }.model-tag { padding: 4px 8px; color: var(--teal-dark); background: #e4f1ee; border-radius: 2px; font-weight: 700; font-size: .78rem; }.status { padding: 5px 9px; border-radius: 2px; color: #4e5a60; background: #e7ebec; font-size: .78rem; font-weight: 700; }.status-erfasst { color: #76570a; background: #fff1ba; }.status-versendet, .status-bestätigt { color: #12605b; background: #d5eee8; }.status-abgelehnt { color: #8e302b; background: #f8deda; }.status-angekündigt { color: #4e4783; background: #e7e4f6; }.status-verfügbar { color: #24623b; background: #dcefdc; }.empty-state { padding: 40px 14px; color: var(--muted); text-align: center; }
-@media (max-width: 700px) { .page-shell { padding: 32px 16px 54px; }.page-header, .section-heading { align-items: flex-start; flex-direction: column; }.page-header { gap: 22px; margin-bottom: 32px; }.form-panel, .table-section { padding: 22px 18px; }.form-toggle { gap: 12px; }.form-toggle .required-note { margin-left: auto; }.form-content { margin-top: 22px; }.form-content h2 { margin-bottom: 22px; }.form-grid { grid-template-columns: 1fr; gap: 18px; }.wide-field { grid-column: auto; }.table-section > .section-heading { margin: -22px -18px 22px; padding: 18px; }.table-wrap { max-height: 62vh; }.table-section thead th { top: 0; } table, thead, tbody, tr, td { display: block; } thead { display: none; } tr { padding: 16px 0; border-bottom: 1px solid var(--line); } tr:last-child { border-bottom: 0; } td { display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 7px 0; border: 0; } td::before { content: attr(data-label); color: var(--muted); font-size: .73rem; font-weight: 700; text-transform: uppercase; } .empty-state { display: block; } }
+@media (max-width: 700px) { .page-shell { padding: 32px 16px 54px; }.page-header, .section-heading { align-items: flex-start; flex-direction: column; }.page-header { gap: 22px; margin-bottom: 32px; }.form-panel, .table-section { padding: 22px 18px; }.form-toggle { gap: 12px; }.form-content { margin-top: 22px; }.form-heading { align-items: flex-start; margin-bottom: 22px; }.form-grid { grid-template-columns: 1fr; gap: 18px; }.wide-field { grid-column: auto; }.table-section > .section-heading { margin: -22px -18px 22px; padding: 18px; }.table-wrap { max-height: 62vh; }.table-section thead th { top: 0; } table, thead, tbody, tr, td { display: block; } thead { display: none; } tr { padding: 16px 0; border-bottom: 1px solid var(--line); } tr:last-child { border-bottom: 0; } td { display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 7px 0; border: 0; } td::before { content: attr(data-label); color: var(--muted); font-size: .73rem; font-weight: 700; text-transform: uppercase; } .empty-state { display: block; } }
