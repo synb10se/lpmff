@@ -15,6 +15,7 @@
             "name": "SFI-LeapOS website",
             "files": [
                 "sfi_LeapOS/.htaccess",
+                "sfi_LeapOS/favicon.ico",
                 "sfi_LeapOS/index.php",
                 "sfi_LeapOS/lib.php",
                 "sfi_LeapOS/style.css",
