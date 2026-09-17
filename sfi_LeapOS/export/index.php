@@ -148,7 +148,7 @@ function exportRowForDisplay(array $item): array
     // Model identifiers stay as-is, because they are technical labels and not natural-language text.
     return [
         'topic' => translateExportContent((string) ($item['topic'] ?? '')),
-        'model' => (string) ($item['model'] ?? ''),
+        'model' => ($item['model'] ?? '') === '' || ($item['model'] ?? '') === ALL_MODELS ? 'all' : (string) $item['model'],
         'suggestion' => translateExportContent((string) ($item['suggestion'] ?? '')),
     ];
 }

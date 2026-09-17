@@ -12,10 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'model' => cleanText($_POST['model'] ?? '', 20),
         'suggestion' => cleanText($_POST['suggestion'] ?? '', 10000),
     ];
+      if ($oldInput['model'] === '') {
+        $oldInput['model'] = ALL_MODELS;
+      }
 
     if ($oldInput['topic'] === '' || mb_strlen($oldInput['topic']) > 256) {
         $error = 'Bitte ein Thema mit maximal 256 Zeichen eingeben.';
-    } elseif (!in_array($oldInput['model'], MODELS, true)) {
+      } elseif (!isValidModel($oldInput['model'])) {
         $error = 'Bitte ein gültiges Modell auswählen.';
     } elseif ($oldInput['suggestion'] === '') {
         $error = 'Bitte einen Vorschlag eingeben.';
@@ -80,7 +83,7 @@ $suggestions = array_reverse(loadSuggestions());
           </label>
           <label for="model">Modell <span>*</span>
             <select id="model" name="model" required>
-              <option value="">Bitte auswählen</option>
+              <option value="<?= e(ALL_MODELS) ?>"<?= $oldInput['model'] === '' ? ' selected' : '' ?>><?= e(ALL_MODELS) ?></option>
               <?php foreach (MODELS as $model): ?>
                 <option value="<?= e($model) ?>"<?= $oldInput['model'] === $model ? ' selected' : '' ?>><?= e($model) ?></option>
               <?php endforeach; ?>

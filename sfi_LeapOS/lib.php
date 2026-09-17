@@ -3,7 +3,13 @@ declare(strict_types=1);
 
 const SUGGESTION_FILE = __DIR__ . '/data/suggestions.json';
 const MODELS = ['B03X', 'B05', 'B10', 'C10', 'T03'];
+const ALL_MODELS = 'alle';
 const STATUSES = ['erfasst', 'geprüft', 'versendet', 'abgelehnt', 'bestätigt', 'angekündigt', 'verfügbar'];
+
+function isValidModel(string $model): bool
+{
+    return $model === ALL_MODELS || in_array($model, MODELS, true);
+}
 
 function loadSuggestions(): array
 {

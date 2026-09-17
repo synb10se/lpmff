@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $model = cleanText($_POST['model'] ?? '', 20);
         $suggestion = cleanText($_POST['suggestion'] ?? '', 10000);
         $status = cleanText($_POST['status'] ?? '', 30);
-        if ($topic === '' || !in_array($model, MODELS, true) || $suggestion === '' || !in_array($status, STATUSES, true)) {
+        if ($topic === '' || !isValidModel($model) || $suggestion === '' || !in_array($status, STATUSES, true)) {
             $error = 'Bitte Thema, Modell, Vorschlag und einen gültigen Status angeben.';
         } else {
             foreach ($suggestions as &$item) {
@@ -148,7 +148,7 @@ $suggestions = loadSuggestions();
         <input id="selected-id" type="hidden" name="id" value="">
         <div class="edit-fields">
           <label for="edit-topic">Thema<input id="edit-topic" name="topic" type="text" maxlength="256" disabled></label>
-          <label for="edit-model">Modell<select id="edit-model" name="model" disabled><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+          <label for="edit-model">Modell<select id="edit-model" name="model" disabled><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
           <label class="edit-suggestion" for="edit-suggestion">Vorschlag<textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
         </div>
         <div class="action-row">
@@ -198,7 +198,7 @@ $suggestions = loadSuggestions();
       const single = selected.length === 1 ? selected[0] : null;
       selectedId.value = single ? single.value : '';
       topic.value = single ? single.dataset.topic : '';
-      model.value = single ? single.dataset.model : '<?= e(MODELS[0]) ?>';
+      model.value = single ? single.dataset.model : '<?= e(ALL_MODELS) ?>';
       suggestion.value = single ? single.dataset.suggestion : '';
       document.getElementById('bulk-status').value = single ? single.dataset.status : '';
       topic.disabled = !single;
