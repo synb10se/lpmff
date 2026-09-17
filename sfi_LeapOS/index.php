@@ -68,14 +68,14 @@ $suggestions = array_reverse(loadSuggestions());
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
-    <section class="form-panel" aria-labelledby="form-title">
-      <div class="section-heading">
+    <details class="form-panel form-collapsible" open>
+      <summary class="section-heading">
         <div>
           <p class="eyebrow">Neue Meldung</p>
           <h2 id="form-title">Was können wir verbessern?</h2>
         </div>
         <span class="required-note">* Pflichtfeld</span>
-      </div>
+      </summary>
       <form method="post" action="">
         <div class="form-grid">
           <label for="topic">Thema <span>*</span>
@@ -95,7 +95,7 @@ $suggestions = array_reverse(loadSuggestions());
         </div>
         <button class="primary-button" type="submit">Eintragen</button>
       </form>
-    </section>
+    </details>
 
     <section class="table-section" aria-labelledby="list-title">
       <div class="section-heading">

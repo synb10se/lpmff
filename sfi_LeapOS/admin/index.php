@@ -129,7 +129,7 @@ $suggestions = loadSuggestions();
   <link rel="stylesheet" href="../style.css">
   <style>
     .admin-panel { margin-bottom: 34px; padding: 22px; background: #e8f2ef; border: 1px solid #c6dfd9; }
-    .page-title-nowrap { white-space: nowrap; font-size: clamp(2rem, 4.4vw, 4rem); }.admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1.1fr .7fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
+    .page-title-nowrap { white-space: nowrap; font-size: clamp(2rem, 4.4vw, 4rem); }.admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1.1fr .7fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row .select-all { min-width: auto; flex-direction: row; align-items: center; gap: 8px; }.action-row .select-all input { width: 18px; height: 18px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
     @media (max-width: 800px) { .edit-fields { grid-template-columns: 1fr; }.edit-suggestion { grid-column: auto; } }
     @media (max-width: 700px) { .admin-table td { display: block; }.admin-table td::before { display: block; }.check-cell { display: block; }.action-row { align-items: stretch; flex-direction: column; }.action-row label, .action-row button { width: 100%; } }
   </style>
@@ -152,6 +152,7 @@ $suggestions = loadSuggestions();
           <label class="edit-suggestion" for="edit-suggestion">Vorschlag<textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
         </div>
         <div class="action-row">
+          <label class="select-all"><input id="select-all" type="checkbox"> Alle auswählen</label>
           <label for="bulk-status">Status ändern<select id="bulk-status" name="status"><option value="">Bitte auswählen</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
           <button class="small-button" name="action" value="bulk_status" type="submit">Status ändern</button>
           <button class="small-button" name="action" value="edit" type="submit" disabled id="save-button">Änderungen speichern</button>
@@ -193,6 +194,7 @@ $suggestions = loadSuggestions();
     const selectedId = document.getElementById('selected-id');
     const saveButton = document.getElementById('save-button');
     const selectionHelp = document.getElementById('selection-help');
+    const selectAll = document.getElementById('select-all');
     function updateSelection() {
       const selected = checkboxes.filter((checkbox) => checkbox.checked);
       const single = selected.length === 1 ? selected[0] : null;
@@ -205,9 +207,15 @@ $suggestions = loadSuggestions();
       model.disabled = !single;
       suggestion.disabled = !single;
       saveButton.disabled = !single;
+      selectAll.checked = checkboxes.length > 0 && selected.length === checkboxes.length;
+      selectAll.indeterminate = selected.length > 0 && selected.length < checkboxes.length;
       selectionHelp.textContent = selected.length === 0 ? 'Bitte eine Zeile auswählen.' : (single ? 'Eine Zeile ausgewählt: Felder können bearbeitet werden.' : selected.length + ' Zeilen ausgewählt: Status ändern oder löschen ist möglich.');
     }
     checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+    selectAll.addEventListener('change', () => {
+      checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+      updateSelection();
+    });
     selectionForm.addEventListener('submit', (event) => {
       const selected = checkboxes.filter((checkbox) => checkbox.checked);
       if (selected.length === 0 && event.submitter?.value !== 'logout') {
