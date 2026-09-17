@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
       $line = trim($line);
       $parts = explode(':', $line, 2);
       $hash = count($parts) === 2 ? trim($parts[1]) : $line;
-      if (password_verify($password, $hash)) {
+      if (verifyHtpasswdPassword($password, $hash)) {
         $validPassword = true;
         break;
       }

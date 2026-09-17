@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
         $line = trim($line);
         $parts = explode(':', $line, 2);
         $hash = count($parts) === 2 ? trim($parts[1]) : $line;
-        if ($password !== '' && password_verify($password, $hash)) {
+        if ($password !== '' && verifyHtpasswdPassword($password, $hash)) {
             session_regenerate_id(true);
             $_SESSION['suggestions_export_authenticated'] = true;
             header('Location: ' . strtok($_SERVER['REQUEST_URI'] ?? 'index.php', '?'));
