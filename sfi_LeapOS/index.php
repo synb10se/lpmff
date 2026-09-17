@@ -69,9 +69,9 @@ $suggestions = array_reverse(loadSuggestions());
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
     <details class="form-panel form-collapsible">
-      <summary class="form-toggle"><span class="eyebrow">Neue Meldung</span><span class="required-note">* Pflichtfeld</span><span class="toggle-icon" aria-hidden="true"></span></summary>
+      <summary class="form-toggle"><span class="eyebrow">Neue Meldung</span><span class="toggle-icon" aria-hidden="true"></span></summary>
       <div class="form-content">
-        <h2 id="form-title">Was können wir verbessern?</h2>
+        <h2 id="form-title">Was können wir verbessern?</h2><span class="required-note">* Pflichtfeld</span>
       <form method="post" action="">
         <div class="form-grid">
           <label for="topic">Thema <span>*</span>
