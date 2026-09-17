@@ -68,7 +68,7 @@ $suggestions = array_reverse(loadSuggestions());
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
-    <details class="form-panel form-collapsible" open>
+    <details class="form-panel form-collapsible">
       <summary class="section-heading">
         <div>
           <p class="eyebrow">Neue Meldung</p>
