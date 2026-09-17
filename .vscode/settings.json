@@ -1,5 +1,5 @@
 {
-    "php.validate.executablePath": "/Applications/MAMP/bin/php/php8.4.1/bin/php",
+    "vim.disableExtension": true,"php.validate.executablePath": "/Applications/MAMP/bin/php/php8.4.1/bin/php",
     "deploy.reloaded": {
         
         "packages": [
