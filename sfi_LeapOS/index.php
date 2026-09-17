@@ -47,8 +47,8 @@ $suggestions = array_reverse(loadSuggestions());
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verbesserungsvorschläge an Leapmotor</title>
-  <link rel="icon" href="leapmotorwiki.ico?v=2" type="image/x-icon" sizes="32x32">
-  <link rel="shortcut icon" href="leapmotorwiki.ico?v=2" type="image/x-icon">
+  <link rel="icon" href="favicon.ico?v=3" type="image/x-icon" sizes="32x32">
+  <link rel="shortcut icon" href="favicon.ico?v=3" type="image/x-icon">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
