@@ -6,6 +6,10 @@ $error = null;
 $notice = null;
 $oldInput = ['topic' => '', 'model' => '', 'suggestion' => ''];
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['saved'])) {
+  $notice = 'Der Vorschlag wurde eingetragen.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $oldInput = [
         'topic' => cleanText($_POST['topic'] ?? '', 256),
@@ -34,8 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
 
         if (saveSuggestions($suggestions)) {
-            $notice = 'Der Vorschlag wurde eingetragen.';
-            $oldInput = ['topic' => '', 'model' => '', 'suggestion' => ''];
+          header('Location: ' . $_SERVER['PHP_SELF'] . '?saved=1', true, 303);
+          exit;
         } else {
             $error = 'Der Vorschlag konnte nicht gespeichert werden. Bitte die Schreibrechte prüfen.';
         }
@@ -100,7 +104,10 @@ $suggestions = array_reverse(loadSuggestions());
           <p class="eyebrow">Übersicht</p>
           <h2 id="list-title">Erfasste Vorschläge</h2>
         </div>
-        <span class="count-badge"><?= count($suggestions) ?> Einträge</span>
+        <div class="section-actions">
+          <span class="count-badge"><?= count($suggestions) ?> Einträge</span>
+          <button class="help-button" type="button" id="status-help-open" aria-haspopup="dialog">Status-Hilfe</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -121,6 +128,40 @@ $suggestions = array_reverse(loadSuggestions());
         </table>
       </div>
     </section>
+
+    <dialog class="help-dialog" id="status-help" aria-labelledby="status-help-title">
+      <div class="help-dialog-content">
+        <div class="help-dialog-header">
+          <div>
+            <p class="eyebrow">Übersicht</p>
+            <h2 id="status-help-title">Bedeutung der Status</h2>
+          </div>
+          <button class="dialog-close" type="button" id="status-help-close" aria-label="Status-Hilfe schließen">&times;</button>
+        </div>
+        <dl class="status-help-list">
+          <div><dt><span class="status status-erfasst">erfasst</span></dt><dd>Der Vorschlag ist eingegangen und wurde noch nicht geprüft.</dd></div>
+          <div><dt><span class="status status-geprüft">geprüft</span></dt><dd>Der Vorschlag wurde inhaltlich geprüft und für die weitere Bearbeitung freigegeben.</dd></div>
+          <div><dt><span class="status status-versendet">versendet</span></dt><dd>Der Vorschlag wurde an Leapmotor weitergeleitet.</dd></div>
+          <div><dt><span class="status status-abgelehnt">abgelehnt</span></dt><dd>Der Vorschlag wird von Leapmotor leidernicht weiterverfolgt.</dd></div>
+          <div><dt><span class="status status-bestätigt">bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen undbestätigt.</dd></div>
+          <div><dt><span class="status status-angekündigt">angekündigt</span></dt><dd>Die Umsetzung des Vorschlags wurde für das nächste Releaseangekündigt.</dd></div>
+          <div><dt><span class="status status-verfügbar">verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist jetzt prinzipiellverfügbar.</dd></div>
+        </dl>
+      </div>
+    </dialog>
   </main>
+  <script>
+    const statusHelp = document.getElementById('status-help');
+    const openStatusHelp = document.getElementById('status-help-open');
+    const closeStatusHelp = document.getElementById('status-help-close');
+
+    openStatusHelp.addEventListener('click', () => statusHelp.showModal());
+    closeStatusHelp.addEventListener('click', () => statusHelp.close());
+    statusHelp.addEventListener('click', (event) => {
+      if (event.target === statusHelp) {
+        statusHelp.close();
+      }
+    });
+  </script>
 </body>
 </html>
