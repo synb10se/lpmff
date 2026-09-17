@@ -178,12 +178,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
         exit;
     }
 
+    $columnWidths = [];
+    foreach (array_keys($rows[0]) as $columnIndex) {
+        $longestLine = 0;
+        foreach ($rows as $row) {
+            $lines = preg_split('/\r\n|\r|\n/', (string) ($row[$columnIndex] ?? '')) ?: [''];
+            foreach ($lines as $line) {
+                $longestLine = max($longestLine, mb_strlen($line));
+            }
+        }
+        $columnWidths[$columnIndex] = min(max($longestLine + 2, 10), 60);
+    }
+    $columnWidths[2] = min($columnWidths[2], 54);
+
     $xml = new XMLWriter();
     $xml->openMemory();
     $xml->setIndent(false);
     $xml->startDocument('1.0', 'UTF-8');
     $xml->startElement('worksheet');
     $xml->writeAttribute('xmlns', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
+    $xml->startElement('cols');
+    foreach ($columnWidths as $columnIndex => $width) {
+        $xml->startElement('col');
+        $xml->writeAttribute('min', (string) ($columnIndex + 1));
+        $xml->writeAttribute('max', (string) ($columnIndex + 1));
+        $xml->writeAttribute('width', (string) $width);
+        $xml->writeAttribute('customWidth', '1');
+        $xml->endElement();
+    }
+    $xml->endElement();
     $xml->startElement('sheetData');
     foreach ($rows as $rowIndex => $row) {
         $xml->startElement('row');
@@ -193,9 +216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
             $xml->startElement('c');
             $xml->writeAttribute('r', $column . ($rowIndex + 1));
             $xml->writeAttribute('t', 'inlineStr');
-            $xml->writeAttribute('s', '1');
+            $xml->writeAttribute('s', $cellIndex === 2 ? '2' : '1');
             $xml->startElement('is');
-            $xml->writeElement('t', str_replace("\n", ' ', (string) $cell));
+            $xml->writeElement('t', (string) $cell);
             $xml->endElement();
             $xml->endElement();
         }
@@ -222,11 +245,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
   <borders count="1">
     <border><left/><right/><top/><bottom/><diagonal/></border>
   </borders>
-  <cellXfs count="2">
+    <cellXfs count="3">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">
       <alignment vertical="top"/>
     </xf>
+        <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">
+            <alignment vertical="top" wrapText="1"/>
+        </xf>
   </cellXfs>
 </styleSheet>
 XML;
