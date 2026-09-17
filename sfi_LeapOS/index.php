@@ -60,7 +60,7 @@ $suggestions = array_reverse(loadSuggestions());
       <div>
         <p class="eyebrow">LeapOS und mehr</p>
         <h1>Verbesserungsvorschläge</h1>
-        <p class="intro">Ideen sammeln, sichtbar machen und gemeinsam weiterentwickeln.</p>
+        <p class="intro">Ideen sammeln, strukturieren und kommunizieren.</p>
       </div>
       <div class="area-links"><a class="admin-link" href="admin/?reauth=1">Bearbeitung</a><a class="admin-link" href="export/">Export</a></div>
     </header>
@@ -69,13 +69,9 @@ $suggestions = array_reverse(loadSuggestions());
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
     <details class="form-panel form-collapsible">
-      <summary class="section-heading">
-        <div>
-          <p class="eyebrow">Neue Meldung</p>
-          <h2 id="form-title">Was können wir verbessern?</h2>
-        </div>
-        <span class="required-note">* Pflichtfeld</span>
-      </summary>
+      <summary class="form-toggle"><span class="eyebrow">Neue Meldung</span><span class="required-note">* Pflichtfeld</span><span class="toggle-icon" aria-hidden="true"></span></summary>
+      <div class="form-content">
+        <h2 id="form-title">Was können wir verbessern?</h2>
       <form method="post" action="">
         <div class="form-grid">
           <label for="topic">Thema <span>*</span>
@@ -95,6 +91,7 @@ $suggestions = array_reverse(loadSuggestions());
         </div>
         <button class="primary-button" type="submit">Eintragen</button>
       </form>
+      </div>
     </details>
 
     <section class="table-section public-table-section" aria-labelledby="list-title">
