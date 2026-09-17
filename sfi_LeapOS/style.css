@@ -24,9 +24,9 @@ h2 { font-size: 1.55rem; }
 .toggle-icon::before { content: '+'; }
 .form-collapsible[open] .toggle-icon::before { content: '\2212'; }
 .form-content { margin-top: 28px; }
-.form-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
-.form-heading h2 { flex: 1; text-align: left; }
-.form-heading .required-note { margin-left: auto; text-align: right; }
+.form-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 18px; margin-bottom: 28px; }
+.form-heading h2 { min-width: 0; text-align: left; }
+.form-heading .required-note { justify-self: end; text-align: right; }
 .table-section { padding: 32px; }
 .section-heading { margin-bottom: 28px; }
 .table-section > .section-heading { margin: -32px -32px 28px; padding: 24px 32px; background: rgba(255,255,255,.98); border-bottom: 1px solid var(--line); }
