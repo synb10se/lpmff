@@ -142,10 +142,10 @@ $suggestions = array_reverse(loadSuggestions());
           <div><dt><span class="status status-erfasst">erfasst</span></dt><dd>Der Vorschlag ist eingegangen und wurde noch nicht geprüft.</dd></div>
           <div><dt><span class="status status-geprüft">geprüft</span></dt><dd>Der Vorschlag wurde inhaltlich geprüft und für die weitere Bearbeitung freigegeben.</dd></div>
           <div><dt><span class="status status-versendet">versendet</span></dt><dd>Der Vorschlag wurde an Leapmotor weitergeleitet.</dd></div>
-          <div><dt><span class="status status-abgelehnt">abgelehnt</span></dt><dd>Der Vorschlag wird von Leapmotor leidernicht weiterverfolgt.</dd></div>
-          <div><dt><span class="status status-bestätigt">bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen undbestätigt.</dd></div>
-          <div><dt><span class="status status-angekündigt">angekündigt</span></dt><dd>Die Umsetzung des Vorschlags wurde für das nächste Releaseangekündigt.</dd></div>
-          <div><dt><span class="status status-verfügbar">verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist jetzt prinzipiellverfügbar.</dd></div>
+          <div><dt><span class="status status-abgelehnt">abgelehnt</span></dt><dd>Der Vorschlag wird von Leapmotor leider nicht weiterverfolgt.</dd></div>
+          <div><dt><span class="status status-bestätigt">bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen und bestätigt.</dd></div>
+          <div><dt><span class="status status-angekündigt">angekündigt</span></dt><dd>Die Umsetzung des Vorschlags wurde für das nächste Release angekündigt.</dd></div>
+          <div><dt><span class="status status-verfügbar">verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist jetzt prinzipiell verfügbar.</dd></div>
         </dl>
       </div>
     </dialog>
