@@ -46,14 +46,14 @@ $suggestions = array_reverse(loadSuggestions());
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verbesserungsvorschläge</title>
+  <title>Verbesserungsvorschläge an Leapmotor</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="page-shell">
     <header class="page-header">
       <div>
-        <p class="eyebrow">LeapOS</p>
+        <p class="eyebrow">LeapOS und mehr<p>
         <h1>Verbesserungsvorschläge</h1>
         <p class="intro">Ideen sammeln, sichtbar machen und gemeinsam weiterentwickeln.</p>
       </div>
