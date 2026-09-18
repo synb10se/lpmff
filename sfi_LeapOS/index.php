@@ -5,12 +5,18 @@ require __DIR__ . '/lib.php';
 $error = null;
 $notice = null;
 $oldInput = ['topic' => '', 'model' => '', 'suggestion' => ''];
+$author = cleanText($_GET['username'] ?? '', 100);
+$authorId = preg_match('/^\d+$/', (string) ($_GET['userID'] ?? $_GET['userid'] ?? '')) === 1
+  ? (string) ($_GET['userID'] ?? $_GET['userid'])
+  : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['saved'])) {
   $notice = 'Der Vorschlag wurde eingetragen.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $author = cleanText($_POST['author'] ?? '', 100);
+  $authorId = preg_match('/^\d+$/', (string) ($_POST['author_id'] ?? '')) === 1 ? (string) $_POST['author_id'] : '';
     $oldInput = [
         'topic' => cleanText($_POST['topic'] ?? '', 256),
         'model' => cleanText($_POST['model'] ?? '', 20),
@@ -34,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'topic' => $oldInput['topic'],
             'model' => $oldInput['model'],
             'suggestion' => $oldInput['suggestion'],
+            'author' => $author,
+            'author_id' => $authorId,
             'status' => 'erfasst',
         ];
 
@@ -77,6 +85,8 @@ $suggestions = array_reverse(loadSuggestions());
       <div class="form-content">
         <div class="form-heading"><h2 id="form-title">Was können wir verbessern?</h2><span class="required-note">* Pflichtfeld</span></div>
       <form method="post" action="">
+        <input type="hidden" name="author" value="<?= e($author) ?>">
+        <input type="hidden" name="author_id" value="<?= e($authorId) ?>">
         <div class="form-grid">
           <label for="topic">Thema <span>*</span>
             <input id="topic" name="topic" type="text" maxlength="256" value="<?= e($oldInput['topic']) ?>" required>

@@ -167,13 +167,14 @@ $suggestions = loadSuggestions();
       <div class="section-heading"><div><p class="eyebrow">Verwaltung</p><h2><?= count($suggestions) ?> Einträge</h2></div></div>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Auswahl</th><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>Vorschlag</th><th>Status</th></tr></thead>
+          <thead><tr><th>Auswahl</th><th>Erfasst am</th><th>Autor</th><th>Thema</th><th>Modell</th><th>Vorschlag</th><th>Status</th></tr></thead>
           <tbody>
-          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
+          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
               <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="Eintrag auswählen"></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td data-label="Autor"><?php if (($item['author'] ?? '') !== ''): ?><?php $conversationParameters = ['subject' => $item['topic'] ?? '']; if (($item['author_id'] ?? '') !== '') { $conversationParameters['userID'] = $item['author_id']; } else { $conversationParameters['username'] = $item['author']; } ?><a class="admin-link" href="<?= e('https://www.lpmff.de/core/conversation-add/?' . http_build_query($conversationParameters)) ?>" target="_blank" rel="noopener"><?= e($item['author']) ?></a><?php else: ?>-<?php endif; ?></td>
               <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
               <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>
               <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
