@@ -1,1 +1,335 @@
-[]
+[
+    {
+        "id": "b98c918e5fa50895",
+        "created_at": "2026-09-17T10:05:25+02:00",
+        "topic": "Fahrbereitschaft mit dem Smartphone aktivieren",
+        "model": "alle",
+        "suggestion": "Die aktuellen Optionen sind die Eingabe einer PIN auf dem Display (gegebenenfalls sichtbar für andere und daher nicht besonders sicher) oder das Ablagen der NFC-Karte auf der Ladefläche der Mittelkonsole.\r\nEine viel bessere Option wäre die Nutzung von NFC auf dem Handy (z.B. Apple CarKey oder Android NFC). Das erfordert keine teuren NFC-Karten und keine PIN-Nummern. Man könnte dann zum Öffnen einfach das Handy an den NFC-Leser im Rückspiegel halten, die Tür öffnen, einsteigen, das Handy auf das Ladepad legen und losfahren. Zusätzlich könnte durch die Verwendung des Handys das Fahrzeug auch erkennen, welches Fahrerprofil verwendet werden soll.\r\nEine Alternative wäre, die Gesichtserkennung zum Starten des Fahrzeugs zu verwenden. Also eine erweiterte ADDW\/DDAW-Funktion, bei der das Auto, sobald man einsteigt, mithilfe der Gesichtserkennung den Motor startet, ohne dass man die NFC-Karte oder einen PIN-Code verwenden muss.",
+        "status": "versendet",
+        "number": 1
+    },
+    {
+        "id": "a4739c49ebd82514",
+        "created_at": "2026-09-17T10:06:16+02:00",
+        "topic": "Kameraaufzeichnung rund um die Uhr aktivieren",
+        "model": "B10",
+        "suggestion": "Die Funktionalität sollte ähnlich wie der „Sentry“-Modus bei Tesla ausgestaltet sein. Die Kameras sollen auch dann aufzeichnen können, wenn das Auto ausgeschaltet und verriegelt ist.\r\nGegebenenfalls könnte es sogar einen Zeitplan geben, sofern keine Aufzeichnung rund um die Uhr benötigt wird oder eine Aktivierung (über LeapOS und\/oder die App), wenn das Fahrzeug auf öffentlichen Parkplätzen abgestellt wird.\r\nDer Schnellstartmodus zeigt, dass das nicht allzuviel Strom verbrauchen dürfte.\r\nDas Einklappen der Außenspiegel beim Verriegeln ist derzeit eine konfigurierbare Option.\r\nEs sollte also einfach sein, die Aktivierung des Sentry-Modus so zu gestalten, dass dabei das Einklappen der Außenspiegel deaktiviert wird.\r\nZusätzlich könnte ein Kamera-Live-Feed des Autos in der mobilen App aktiviert werden, bei der man jede Kamera rund um das Fahrzeug manuell auswählen und zusätzlich auch eine 3D-Ansicht nutzen kann.",
+        "status": "versendet",
+        "number": 2
+    },
+    {
+        "id": "85f19711bf7ae7bc",
+        "created_at": "2026-09-17T10:06:56+02:00",
+        "topic": "Benutzerprofile",
+        "model": "B10",
+        "suggestion": "Im Gegensatz zum C10 fehlt diese Funktion beim B10, obwohl es dafür keinen wirklichen Grund gibt da der B10 die fortschrittlichere Softwareplattform hat.\r\nDie Profile könnten dann auch anhand der NFC\/Bluetooth-ID (Handy\/App) gewechselt werden.\r\nMithilfe der Identifikation könnte das Fahrzeug bereits mit der Anpassung der Sitzposition beginnen, noch bevor der Fahrer einsteigt.\r\nAußerdem sollten, was das Benutzerprofil betrifft, noch viel mehr Einstellungen mit dem aktiven Benutzerprofil verknüpft sein. Dazu gehören beispielsweise Medieneinstellungen, Klimaanlageneinstellungen, Navigationseinstellungen, ADAS-Einstellungen, Schnellzugriffe usw.\r\nGrundsätzlich sollte das LeapOS immer die zuletzt gewählten Einstellungen (z.B. Fahrmodus, Lenkmodus, OnePedalDrive) beibehalten, bis das Profil gewechselt wird.",
+        "status": "angekündigt",
+        "number": 3
+    },
+    {
+        "id": "ba075489c2a982fc",
+        "created_at": "2026-09-17T10:07:33+02:00",
+        "topic": "Verbesserung der „One-Pedal“ Funktion",
+        "model": "B10",
+        "suggestion": "Diese Funktion muss verbessert werden, da die Empfindlichkeit des Fahrpedals problematisch ist. Beim Einparken und bei niedrigen Geschwindigkeiten kann dies zu unbeabsichtigten Kollisionen führen. Es würde bereits ausreichen, wenn sich der Fahrmodus per „One-Pedal“ umschalten ließe. Das Ziel ist es, „One-Pedal“ und die Beschleunigung im Komfortmodus gleichzeitig nutzen zu können.\r\nBessere Kalibrierung der Empfindlichkeitskurve für den „One-Pedal“ Modus: Derzeit führt bereits ein leichtes Anheben des Pedals zu einer sofortigen und recht aggressiven regenerativen Bremsung. Dies erschwert ein sanftes Fahren.\r\nUnd der „One-Pedal“-Modus funktioniert derzeit nicht im Rückwärtsgang.\r\nZusätzlich werden die Bremslichter beim automatischen Abbremsen nicht aktiviert, was eine Verkehrsgefährdung sein kann.\r\nIm Idealfall gäbe es im „One-Pedal“-Modus eine einstellbare Stärke der regenerativen Bremskraft (z. B. in drei Stufen) oder verschiedene Voreinstellungen (z. B. „Sanft“ mit einem allmählicheren Bremsaufbau im Vergleich zu „Standard“, wie es derzeit der Fall ist). In Kombination mit der Möglichkeit, das Beschleunigungsprofil zu wählen (wie beispielsweise die bereits erwähnte Beschleunigung im Komfortmodus), würde dies das „One-Pedal“-System wirklich vielseitig und für jeden komfortabel machen.",
+        "status": "angekündigt",
+        "number": 4
+    },
+    {
+        "id": "1313f45cb6a5dadf",
+        "created_at": "2026-09-17T10:08:31+02:00",
+        "topic": "Verbesserung der Bluetooth-Schlüssel-Funktion",
+        "model": "B10",
+        "suggestion": "Der Bluetooth-Schlüssel des Mobiltelefons entriegelt oder verriegelt das Auto nicht zuverlässig, wenn ich mich dem Auto nähere oder es verlasse.\r\nMit der bereits geöffneten Leapmotor-App funktionieren „Verriegeln“ oder „Entriegeln“ aber einwandfrei.\r\nObwohl auf dem iPhone (iOS 26.4.1) Hintergrundaktualisierungen aktiviert sind und der Erfassungsbereich in der Leapmotor-App (1.12.3) auf „Weit“ eingestellt ist, lässt sich das Fahrzeug manchmal nicht entriegeln oder entriegelt erst sehr spät, wenn ich mich ihm von der Fahrerseite her nähere. Umgekehrt entriegelt sich das Fahrzeug manchmal, wenn ich mich in einem Gebäude neben der Beifahrerseite des Fahrzeugs in einer Entfernung von etwa 5 Metern befinde und mein Handy dort auf den Tisch lege.\r\nNach einigem Ausprobieren ist mir außerdem folgendes aufgefallen:\r\n\r\n(1) Dieses Verhalten scheint relativ unabhängig von der Reichweiteneinstellung („Weit“, „Standard“, „Kurz“) zu sein.\r\n(2) Selbst wenn die Leapmotor-App auf dem iPhone ausgeschaltet ist, reagiert das Fahrzeug auf den Bluetooth-Schlüssel.\r\n\r\nDie Ursache scheint also weniger bei der App (iOS, Android) zu liegen als vielmehr bei der Art und Weise, wie LeapOS Bluetooth-Verbindungen verwaltet und wie der entsprechende Bluetooth-Empfang am Fahrzeug funktioniert.\r\nAbgesehen davon, dass der Bluetooth-Schlüssel auch bei ausgeschalteter App funktioniert, ist mir aufgefallen, dass es manchmal einige Sekunden dauert, bis die Bluetooth-Funktion des Autos „hochfährt“, wenn ich mich beispielsweise mit meinem iPhone in der Hosentasche nähere.\r\nHeute Morgen in der Bäckerei reagierte mein B10 bereits aus einer Entfernung von drei Metern, als ich mich schräg von hinten auf der Beifahrerseite näherte, und verriegelte sich dann wieder (!), als ich um den Kofferraum herum zur Fahrerseite ging. Ich konnte die Fahrertür dann nur öffnen, indem ich den Knopf am Türgriff drückte.\r\nZusätzlich ist das Timing der automatischen Verriegelung zu aggressiv: Das Fahrzeug verriegelt sich nach dem Aussteigen zu schnell. Im praktischen Einsatz (z. B. beim Herausnehmen eines Kindes aus dem Auto) kann es vorkommen, dass sich das Auto selbst verriegelt und Alarme auslöst, während sich noch jemand im Fahrzeug befindet.",
+        "status": "versendet",
+        "number": 5
+    },
+    {
+        "id": "338a7971600f76f9",
+        "created_at": "2026-09-17T10:09:02+02:00",
+        "topic": "Erweiterte Einparkhilfe",
+        "model": "B10",
+        "suggestion": "Das automatische Einparken ist seit mehr als 20 Jahren eine bekannte und beliebte Komfortfunktion.\r\nIn Anlehnung an Toyota und Volvo bieten die meisten Hersteller diese Funktion – zumindest in ihren Mittelklasse- und Luxusfahrzeugen – spätestens seit 2010 an.\r\nMit Aiways, Opel und Renault hielt die Funktion dann auch Einzug in Kleinwagen. Derzeit bietet sogar der Renault Twingo E-Tech diese Funktion ab der Ausstattungsvariante „Techno“ an und kostet dabei fast 10.000 Euro weniger als ein Leapmotor B05 oder B10.\r\nDas Angebot dieser Funktion könnte die Attraktivität von Leapmotor-Fahrzeugen durchaus steigern.",
+        "status": "versendet",
+        "number": 6
+    },
+    {
+        "id": "38dbd49ef0eee483",
+        "created_at": "2026-09-17T10:09:29+02:00",
+        "topic": "Benutzerdefinierte Taste",
+        "model": "B10",
+        "suggestion": "Derzeit können das einmalige und das doppelte Drücken einer Funktion zugeordnet werden, doch dies könnte noch auf eine dritte Verknüpfung erweitert werden, indem das lange Drücken der benutzerdefinierten Taste individuell konfigurierbar gemacht wird.",
+        "status": "versendet",
+        "number": 7
+    },
+    {
+        "id": "4426f2b808e0c282",
+        "created_at": "2026-09-17T10:09:56+02:00",
+        "topic": "Zeitplan für Updates",
+        "model": "alle",
+        "suggestion": "Derzeit haben Benutzer nur unzureichende Informationen oder hören Gerüchte, was voraussichtlich behoben oder verbessert wird. Und aufgrund der sehr geringen Update-Frequenz (z.B. im Vergleich mit Tesla) können Benutzer nur schlecht einschätzen, wie schnell Mängel behoben oder erwartete Funktionen bereitgestellt werden.\r\nEs geht dabei nicht um konkrete Termine, sondern um geplante Zielangaben.",
+        "status": "verfügbar",
+        "number": 8
+    },
+    {
+        "id": "615518a991add3a3",
+        "created_at": "2026-09-17T15:53:43+02:00",
+        "topic": "One-Pedal-Driving",
+        "model": "B10",
+        "suggestion": "Mit dem neuesten Path wurde das automatische aktivieren des One-Pedal-Driving bei Fahrzeugstart herausgepatcht. Dieses Verhalten gehört zum mit Abstand am meisten kritisierten Punkt an allen Kia-EVs, die es auf dem deutschen Markt gibt und nun schaltet auch Leapmotor dieses Feature ab.\r\nBitte wieder einbauen.",
+        "status": "erfasst",
+        "number": 9
+    },
+    {
+        "id": "c2dc0201daf7ddaf",
+        "created_at": "2026-09-17T15:55:05+02:00",
+        "topic": "Ladeplanung im Navigationssystem",
+        "model": "alle",
+        "suggestion": "Es gibt zwar eine Ladeplanung, jedoch lassen sich die Ladestationen vorab nur nach Steckertypen filtern. Hier fehlt die Möglichkeit, eine Liste der jeweils genutzten Ladeanbieter und -tarife zu erstellen, die dann bei der Ladeplanung möglichst ausschließlich genutzt werden.",
+        "status": "erfasst",
+        "number": 10
+    },
+    {
+        "id": "33b71412164d975c",
+        "created_at": "2026-09-17T16:52:57+02:00",
+        "topic": "Kamera",
+        "model": "B10",
+        "suggestion": "Beim Rückwärtsfahren bitte den Zugriff auf die Felgenkamera und den Weitwinkelmodus ermöglichen.",
+        "status": "geprüft",
+        "number": 11
+    },
+    {
+        "id": "677fab71f70b8a1a",
+        "created_at": "2026-09-17T17:27:02+02:00",
+        "topic": "ACC",
+        "model": "C10",
+        "suggestion": "Die Funktion des ACC ist alles andere als zufriedenstellend. \r\n- Selbst der kleinste Abstand zum Vordermann ist immer noch deutlich zu groß.\r\n- Das Abbremsen erfolgt viel zu stark und nicht weich\r\n- Erkennt das System ein vorrausfahrendes Fahrzeug und reduziert deshalb die Geschwindigkeit, sollte es wieder auf die eingestellte Geschwindigkeit wechseln, wenn durch Betätigung des Blinkers signalisiert wird, das überholt werden soll\r\n- Selbst auf freier Strecke versucht das System exakt die eingestellte Geschwindigkeit durch stetiges Beschleunigen und Bremse zu halten. Dieses sollte weicher geschehen und die Hysterese der Regelung weiter gefasst werden.",
+        "status": "geprüft",
+        "number": 12
+    },
+    {
+        "id": "a81cb7190f1127cb",
+        "created_at": "2026-09-17T17:27:39+02:00",
+        "topic": "Kamera",
+        "model": "C10",
+        "suggestion": "Beim Rückwärtsfahren bitte Zugriff auf die Felgenkamera und den Weitwinkelmodus ermöglichen! Beim rangieren automatischer Wechsel von Heck- auf Frontkamera!",
+        "status": "erfasst",
+        "number": 13
+    },
+    {
+        "id": "7b12d9ba7901b557",
+        "created_at": "2026-09-17T21:08:03+02:00",
+        "topic": "Bessere Anpassbarkeit der Dispalys",
+        "model": "alle",
+        "suggestion": "Das Fahrerdisplay, sowie das Hauptdisplay sollten mehr Anpassungsmöglichkeiten bieten. Das Fahrerdisplay sollte hierbei Stark modifiziert werden können, natürlich unter Einhaltung der Gesetzlichen Bestimmungen (Verfügbarkeit des Tachos, ein Platz für die Warnhinweise, etc) Die Anpassungen vom Fahrerdisplay sollten sie weit gehen, dass der Individuelle Geschmack des Fahrers getroffen werden kann. Die Bearbeitung sollte hierbei über eine App möglich sein, oder über ein Programm für den PC, mit dem das Aussehen designt werden kann und dann über die App hochgeladen, oder beim Leapmotor Händler gegen gebühr eingespielt werden können. Alternativ wären auch vorgefertigte, gegen Aufpreis erhältliche, Designs denkbar",
+        "status": "erfasst",
+        "number": 14
+    },
+    {
+        "id": "af0fe47d3ef9c22b",
+        "created_at": "2026-09-18T10:45:46+02:00",
+        "topic": "Alle Medien zu leise",
+        "model": "B10",
+        "suggestion": "Alle Medien (Audio, Telefon, Naviansagen) sind selbst auf maximaler Lautstärke zu leise. Bei z.B. 130 km\/h auf der Autobahn und Regen dabei, kann man teilweise nicht mehr telefonieren, da zu leise. Laute Musik hören ist eigentlich auch nicht möglich. Die Lautstärke des gesamten System sollte um mindestens 25% angehoben werden.",
+        "status": "geprüft",
+        "number": 15
+    },
+    {
+        "id": "a21aefc041df3a0a",
+        "created_at": "2026-09-18T10:47:11+02:00",
+        "topic": "Innenraumüberwachung",
+        "model": "B10",
+        "suggestion": "Wenn man bei der Innenraumüberwachung die \"Verzögerte Erkennung\" aktiviert, ist der Haken nach jedem Starten des System wieder deaktiviert.\r\nAusserdem muss sowohl im Campingmodus als auch im Guardmodus die Innenraumüberwachung jeweils extra aktiviert werden. Das sollte eigentlich automatisch funktionieren, weil sonst die Alarmanlage immer angeht.",
+        "status": "geprüft",
+        "number": 16
+    },
+    {
+        "id": "c49a826eea16a349",
+        "created_at": "2026-09-18T10:54:45+02:00",
+        "topic": "LCC\/ACC einzeln abschalten",
+        "model": "alle",
+        "suggestion": "In bestimmten Fahrsituationen möchte man eher nur den LCC ausschalten, nicht aber den ACC. Man sollte mit dem Wahlhebel nach oben einzeln LCC und ACC abschalten können, genauso wie man es auch aktiviert. Einmal hoch ACC aus, zweimal hoch LCC aus.",
+        "status": "geprüft",
+        "number": 17
+    },
+    {
+        "id": "552cae99e3607dd5",
+        "created_at": "2026-09-18T10:55:32+02:00",
+        "topic": "Fensterhebersperre nur für hinten",
+        "model": "alle",
+        "suggestion": "Bei anderen Autos kenne ich das, dass diese nur hinten die Fenster sperrt, nicht aber auch das Fenster beim Beifahrer.",
+        "status": "erfasst",
+        "number": 18
+    },
+    {
+        "id": "991f82b7ddf8d249",
+        "created_at": "2026-09-18T12:42:48+02:00",
+        "topic": "Displayanzeigen beide,  Schrifthöhe und Symbole, in der Größe anpassbar",
+        "model": "alle",
+        "suggestion": "Die Bilschrimanzeigen und Symbole sollten einstellbar werden .\r\n\r\nEv. mit einer Scrollfunktion. wie am Handy oder Tablet\r\n\r\nDas wäre sehr hilfreich, weil ein Ablesen der Daten und Infos nur mit einer Sehhilfe ( Brille) fehlerfrei möglich sind !!",
+        "status": "erfasst",
+        "number": 19
+    },
+    {
+        "id": "8bb7ea9d674a2302",
+        "created_at": "2026-09-18T21:36:43+02:00",
+        "topic": "ACC ab 20 km\/h",
+        "model": "alle",
+        "suggestion": "Da Zonen mit Geschwindigkeitsbegrenzungen auf 20 km\/h häufiger werden, sollte es möglich sein, diese Geschwindigkeit auch per ACC einzustellen. Diese Möglichkeit gibt es auch bereits seit vielen Jahren für andere Fahrzeuge.",
+        "status": "geprüft",
+        "number": 20
+    },
+    {
+        "id": "009eeb63bfbdf9a1",
+        "created_at": "2026-09-19T17:01:11+02:00",
+        "topic": "Schneller Zugriff auf Lichtfunktion",
+        "model": "alle",
+        "suggestion": "Wenn die Umgebungslichtstärke ausreichend ist, so dass der Lichtsensor das Fahrlicht nicht aktiviert, aber die Sicht dennoch schlecht ist, sollte es einen Kurzbefehl zur Lichtaktivierung geben. Aktuell gibt es das nur für die Nebelschlussleuchte, aber nicht für das Fahrlicht, was häufiger benötigt wird.",
+        "status": "geprüft",
+        "number": 21
+    },
+    {
+        "id": "e0735226965eb8e2",
+        "created_at": "2026-09-19T21:32:56+02:00",
+        "topic": "Kameraaufzeichnung rund um die Uhr aktivieren",
+        "model": "alle",
+        "suggestion": "Die Kameras sollen auch dann aufzeichnen können, wenn das Auto ausgeschaltet und verriegelt ist.",
+        "status": "geprüft",
+        "number": 22
+    },
+    {
+        "id": "d8f624f091e9c188",
+        "created_at": "2026-09-23T14:42:37+02:00",
+        "topic": "Live battery estimate for destination",
+        "model": "alle",
+        "suggestion": "Right now the navigation only shows the battery estimate when starting a journey, and if you have plotted a charging point enroute. Would be nice having a live estimate.",
+        "status": "erfasst",
+        "number": 23
+    },
+    {
+        "id": "ae742b189c3c5243",
+        "created_at": "2026-09-23T14:52:23+02:00",
+        "topic": "Better layout for settings",
+        "model": "alle",
+        "suggestion": "Having the layout put in a more logical order, e.g. having the driving page first because there isn't a drive select button. Also the One Pedal Drive option should be an extention of the regen breaking options så that it would be (Weak - Medium - Strong - One Pedal Drive).",
+        "status": "erfasst",
+        "number": 24
+    },
+    {
+        "id": "139599f28610ebf1",
+        "created_at": "2026-09-23T15:03:00+02:00",
+        "topic": "Bluetooth for profile association",
+        "model": "alle",
+        "suggestion": "with profiles being added in the latest update for B10, and also available for B05 and B03X, you should be able to link a phone to a user so the car will be able to choose that profile when the phone is in the car.",
+        "status": "erfasst",
+        "number": 25
+    },
+    {
+        "id": "120dd8fc7f74c8db",
+        "created_at": "2026-09-23T16:06:40+02:00",
+        "topic": "Improved navigation",
+        "model": "alle",
+        "suggestion": "First of all are the tom tom maps quite inaccurate, but that isn't Leapmotors fault, but the navigation will never suggest take a ferry, apart from if the destination is an island only accessible via ferry. If your going somewhere wher a ferry would be a massiv shortcut the car will not even suggest the ferry as an option and will always only show land based options, even if you try setting the port as a stop.",
+        "status": "erfasst",
+        "number": 26
+    },
+    {
+        "id": "4c6189b4d8baadb1",
+        "created_at": "2026-09-25T07:57:24+02:00",
+        "topic": "Guard Mode",
+        "model": "alle",
+        "suggestion": "Der Guard Mode sollte keine Zeitbeschränkung von 30 Minuten haben, ähnlich wie bei Tesla. Zusätzlich könnte der Guard Mode über die Leapmotor App angezeigt, aktiviert oder deaktiviert werden, statt nur am Hauptdisplay.",
+        "status": "geprüft",
+        "number": 27
+    },
+    {
+        "id": "a71d69b35058734f",
+        "created_at": "2026-09-25T10:59:40+02:00",
+        "topic": "ACC Nach Update 3.41.30 unbrauchbar",
+        "model": "B10",
+        "suggestion": "Der ACC steht die meiste Zeit nicht zur Verfügung (alle vorwärtsgerichteten Sensoren zeigen \"Error\").\r\nWenn der ACC läuft, verliert er sehr oft den \"Kontakt\" zum Vordermann, d.h. es wird kein blaues Auto vor mir angezeigt (auch kein graues Auto, sondern GAR KEINS). Dadurch hält er auch nicht mehr automatisch Abstand. Man bremst also selbst und dann ist der ACC aus.\r\nDie neue Resume-Funktion (linke Lenkradtaste nach links oder rechts) ist an dieser Stelle aber sehr hilfreich! Diese bitte beibehalten.",
+        "status": "erfasst",
+        "number": 28
+    },
+    {
+        "id": "23fdc1fcf8b880ee",
+        "created_at": "2026-09-25T11:12:35+02:00",
+        "topic": "ADDW (Ablenkungswarner) nach Update auf 3.41.30 nicht mehr abwählbar über Shortcut",
+        "model": "B10",
+        "suggestion": "Seit dem Update auf 3.41.30 lässt sich der ADDW (Ablenkungswarner) nicht mehr über die Lenkradtasten abwählen.\r\nObwohl im Lenkrad Menü bei zweimaligen Klick auf AUS gestellt, wird dieser nicht deaktiviert, wenn man am Lenkrad die Tasten drückt.\r\n\r\nAktuell lässt sich der ADDW nur manuell vor Fahrtantritt im Menü deaktivieren.",
+        "status": "erfasst",
+        "number": 29
+    },
+    {
+        "id": "3f08b2289407b633",
+        "created_at": "2026-09-25T11:13:10+02:00",
+        "topic": "Zusammenspiel internes Navi \/ Android Auto nach Update 3.41.30",
+        "model": "B10",
+        "suggestion": "Wenn ich über Android Auto Musik abspiele und gleichzeitig das interne Navigationssystem benutze, wird sobald eine Ansage vom Navi kommt, die Musik gestoppt (statt leiser zu werden). Nach Ende der Navi-Ansage spielt die Musik aus Android Auto dann aber nicht weiter. Ich muss dann im AA oder auf der Desktop-Kachel jedesmal wieder auf \"Play\" drücken. Und das nach JEDER Navi-Ansage (dazu gibt's einen separaten Vorschlag)",
+        "status": "erfasst",
+        "number": 30
+    },
+    {
+        "id": "e40481d32abd2ff5",
+        "created_at": "2026-09-25T11:20:19+02:00",
+        "topic": "Zu viele Navigationsansagen nach Update 3.41.30",
+        "model": "B10",
+        "suggestion": "Seit dem Update werden jetzt auf einer Autobahn oder Kraftfahrstraße ALLE Ausfahrten angesagt!\r\n\"Folgen Sie den Schildern Richtung [nächste Ausfahrt]\"\r\nAuf höhe der Ausfahrt dann \"Halten Sie sich links\"\r\nNatürlich muss ich mich links halten - ich will ja geradeaus weiter.\r\nAußerdem wird jedesmal nur die Strecke bis zur nächsten Ausfahrt angezeigt und angesagt (\"Fahren sie 1,2 km weiter\", obwohl man noch 60 km auf dieser Straße weiterfährt).\r\n\r\nHier sollte nur die Ausfahrt angesagt werden, die man dann auch tatsächlich nehmen muss (und nicht alle, die man nur passiert). Und auch nur die Strecke bis zu dieser Ausfahrt (und nicht nur bis zur nächsten, an der man aber vorbeifährt).",
+        "status": "erfasst",
+        "number": 31
+    },
+    {
+        "id": "b78a60dc4e10c2f8",
+        "created_at": "2026-09-25T11:30:00+02:00",
+        "topic": "OPD",
+        "model": "B10",
+        "suggestion": "Nach dem Update auf 3.41.30 wird OPD jetzt bei jedem Parkvorgang deaktiviert, auch wenn es dauerhaft eingestellt wurde. Das war, bevor es die Benutzerprofile gab, nicht so. Ausserdem sollten die Fahreinstellungen (Beschleunigungsmodus, Rekuperation, Lenkmodus, Höchstgeschwindigkeit, OPD, Auto-Hold) fester Teil des Benutzerprofils sein und mit ihm zusammen gespeichert werden. Die Lösung über die Benutzerspezifische Lenkradanpassung ist dafür nicht ausreichend und sollte eher Änderungen während der Fahrt (Beschleunigungsmodus, Rekuperation) ermöglichen statt Einstellungen, die nur im Parkmodus vorgenommen werden können (OPD).",
+        "status": "geprüft",
+        "number": 32
+    },
+    {
+        "id": "c5f83976cbe006ae",
+        "created_at": "2026-09-25T11:34:02+02:00",
+        "topic": "Guard Modus",
+        "model": "B10",
+        "suggestion": "Der Guard-Modus sollte eigentlich die eingestellte Klimaeinstellung übernehmen. Aktuell wird die Temperatur immer auf 25 Grad gestellt.",
+        "status": "geprüft",
+        "number": 33
+    },
+    {
+        "id": "bc9c59a9ff3b6ce7",
+        "created_at": "2026-09-25T11:35:35+02:00",
+        "topic": "Reinigungsmodus",
+        "model": "alle",
+        "suggestion": "Der Reinigungsmodus sollte ein echter Reinigungsmodus werden. Er sollte alle Assistenten, Auto Hold, Scheibenwischer-Automatik deaktivieren, die Spiegel einklappen und den Wagen verriegeln – sodass das als Vorbereitung für die Waschstraße ausreicht. Das Umschalten auf N kann weiterhin wie bisher erfolgen.",
+        "status": "erfasst",
+        "number": 34
+    },
+    {
+        "id": "b686825e703a3752",
+        "created_at": "2026-09-25T11:36:23+02:00",
+        "topic": "Parksensoren",
+        "model": "B10",
+        "suggestion": "Alarmton der Parksensoren sollte um einiges lauter sein.",
+        "status": "erfasst",
+        "number": 35
+    },
+    {
+        "id": "f785750a0667915e",
+        "created_at": "2026-09-25T13:19:36+02:00",
+        "topic": "DAB Radiosender Liste",
+        "model": "B10",
+        "suggestion": "Wenn die Radio-App geöffnet wird und unter DAB auf \"Alle\" geklickt wird, kann man seit dem Update 3.41.30 in der Liste nicht mehr ganz nach unten scrollen. Während des Scrollens springt die Ansicht immer wieder nach oben.",
+        "status": "geprüft",
+        "number": 36
+    },
+    {
+        "id": "0705c54849485477",
+        "created_at": "2026-09-26T01:14:19+02:00",
+        "topic": "Abblendlicht geht bei Dämmerung an wenn die Tür geöffnet wird",
+        "model": "B10",
+        "suggestion": "Tagfahrlicht wäre voll ausreichend. Abblendlicht kann sich einschalten wenn z.B. die Fahrstufe eingelegt wird.\r\nDas gleiche beim Abstellen, bitte Licht aus wenn auf Parken gedrückt wird. Da reicht das Tagfahrlicht genauso.",
+        "status": "erfasst",
+        "number": 37
+    }
+]

@@ -19,7 +19,7 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
 
-Beim Aufruf aus dem WoltLab-Forum muss der Benutzername als URL-Parameter `username` übergeben werden, beispielsweise `index.php?username=MaxMustermann`. Optional kann zusätzlich die WoltLab-Benutzer-ID als `userID` übergeben werden, beispielsweise `index.php?username=MaxMustermann&userID=123`. Der Name wird mit dem neuen Vorschlag gespeichert, öffentlich nicht angezeigt und in der Admin-Ansicht als Link zur Konversationserstellung mit Thema als Betreff angeboten. Wenn `userID` mitgegeben wurde, wird sie von WoltLab zur automatischen Auswahl des Teilnehmers verwendet.
+URL-Parameter wie `username`, `userID` und `userid` werden nicht ausgewertet. Vorschläge enthalten keine Angaben zum Autor oder zu einer Autorennummer.
 
 Unter `…/export` gibt es eine weitere passwortgeschützte Seite. Sie zeigt ausschließlich Einträge mit dem Status `geprüft` auf Englisch und erlaubt den Export ausgewählter oder aller Einträge als CSV bzw. Excel-kompatible `.xls`-Datei.
 

@@ -5,18 +5,12 @@ require __DIR__ . '/lib.php';
 $error = null;
 $notice = null;
 $oldInput = ['topic' => '', 'model' => '', 'suggestion' => ''];
-$author = cleanText($_GET['username'] ?? '', 100);
-$authorId = preg_match('/^\d+$/', (string) ($_GET['userID'] ?? $_GET['userid'] ?? '')) === 1
-  ? (string) ($_GET['userID'] ?? $_GET['userid'])
-  : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['saved'])) {
   $notice = 'Der Vorschlag wurde eingetragen.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $author = cleanText($_POST['author'] ?? '', 100);
-  $authorId = preg_match('/^\d+$/', (string) ($_POST['author_id'] ?? '')) === 1 ? (string) $_POST['author_id'] : '';
     $oldInput = [
         'topic' => cleanText($_POST['topic'] ?? '', 256),
         'model' => cleanText($_POST['model'] ?? '', 20),
@@ -36,12 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $suggestions = loadSuggestions();
         $suggestions[] = [
             'id' => bin2hex(random_bytes(8)),
+          'number' => nextSuggestionNumber($suggestions),
             'created_at' => date(DATE_ATOM),
             'topic' => $oldInput['topic'],
             'model' => $oldInput['model'],
             'suggestion' => $oldInput['suggestion'],
-            'author' => $author,
-            'author_id' => $authorId,
             'status' => 'erfasst',
         ];
 
@@ -85,8 +78,6 @@ $suggestions = array_reverse(loadSuggestions());
       <div class="form-content">
         <div class="form-heading"><h2 id="form-title">Was können wir verbessern?</h2><span class="required-note">* Pflichtfeld</span></div>
       <form method="post" action="">
-        <input type="hidden" name="author" value="<?= e($author) ?>">
-        <input type="hidden" name="author_id" value="<?= e($authorId) ?>">
         <div class="form-grid">
           <label for="topic">Thema <span>*</span>
             <input id="topic" name="topic" type="text" maxlength="256" value="<?= e($oldInput['topic']) ?>" required>
@@ -121,12 +112,13 @@ $suggestions = array_reverse(loadSuggestions());
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>Vorschlag</th><th>Status</th></tr></thead>
+          <thead><tr><th>Nr.</th><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>Vorschlag</th><th>Status</th></tr></thead>
           <tbody>
           <?php if ($suggestions === []): ?>
-            <tr><td class="empty-state" colspan="5">Noch keine Vorschläge erfasst.</td></tr>
+            <tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
+              <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
               <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>

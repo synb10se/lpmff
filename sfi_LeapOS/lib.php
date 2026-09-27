@@ -19,7 +19,60 @@ function loadSuggestions(): array
 
     $contents = file_get_contents(SUGGESTION_FILE);
     $suggestions = $contents === false ? null : json_decode($contents, true);
-    return is_array($suggestions) ? $suggestions : [];
+    if (!is_array($suggestions)) {
+        return [];
+    }
+
+    $reservedNumbers = [];
+    foreach ($suggestions as $suggestion) {
+        $number = is_array($suggestion) ? ($suggestion['number'] ?? null) : null;
+        if (is_int($number) && $number > 0) {
+            $reservedNumbers[$number] = true;
+        }
+    }
+
+    $assignedNumbers = [];
+    $nextAvailableNumber = 1;
+    $needsSave = false;
+    foreach ($suggestions as &$suggestion) {
+        if (is_array($suggestion)) {
+            if (array_key_exists('author', $suggestion) || array_key_exists('author_id', $suggestion)) {
+                $needsSave = true;
+            }
+            unset($suggestion['author'], $suggestion['author_id']);
+
+            $number = $suggestion['number'] ?? null;
+            if (!is_int($number) || $number < 1 || isset($assignedNumbers[$number])) {
+                while (isset($reservedNumbers[$nextAvailableNumber]) || isset($assignedNumbers[$nextAvailableNumber])) {
+                    $nextAvailableNumber++;
+                }
+                $number = $nextAvailableNumber++;
+                $suggestion['number'] = $number;
+                $needsSave = true;
+            }
+            $assignedNumbers[$number] = true;
+        }
+    }
+    unset($suggestion);
+
+    if ($needsSave) {
+        saveSuggestions($suggestions);
+    }
+
+    return $suggestions;
+}
+
+function nextSuggestionNumber(array $suggestions): int
+{
+    $maxNumber = 0;
+    foreach ($suggestions as $suggestion) {
+        $number = is_array($suggestion) ? ($suggestion['number'] ?? null) : null;
+        if (is_int($number) && $number > $maxNumber) {
+            $maxNumber = $number;
+        }
+    }
+
+    return $maxNumber + 1;
 }
 
 function saveSuggestions(array $suggestions): bool
