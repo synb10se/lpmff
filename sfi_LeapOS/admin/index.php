@@ -48,7 +48,7 @@ if (!$authenticated) {
   ?>
   <!DOCTYPE html>
   <html lang="de">
-  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css"></head>
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css?v=10"></head>
   <body><main class="page-shell"><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow">Geschützter Bereich</p><h1 style="font-size: 2.5rem;">Bearbeitung</h1><p class="intro">Bitte Passwort eingeben, um die Vorschläge zu bearbeiten.</p>
   <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
   <form method="post"><input type="hidden" name="action" value="login"><label for="password">Passwort<input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit">Anmelden</button></form>
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = cleanText($_POST['id'] ?? '', 32);
         $topic = cleanText($_POST['topic'] ?? '', 256);
         $model = cleanText($_POST['model'] ?? '', 20);
-        $leaposVersion = cleanText($_POST['leapos_version'] ?? '', 30);
+        $leaposVersion = resolveLeapOsVersion($_POST['leapos_version'] ?? '', $_POST['leapos_version_custom'] ?? '');
         $category = cleanText($_POST['category'] ?? '', 40);
         $classification = cleanText($_POST['classification'] ?? '', 40);
         $suggestion = cleanText($_POST['suggestion'] ?? '', 10000);
@@ -125,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $suggestions = loadSuggestions();
+$availableLeapOsVersions = availableLeapOsVersions($suggestions);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -132,7 +133,7 @@ $suggestions = loadSuggestions();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vorschläge bearbeiten</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../style.css?v=10">
   <style>
     .admin-panel { margin-bottom: 34px; padding: 22px; background: #e8f2ef; border: 1px solid #c6dfd9; }
     .page-title-nowrap { white-space: nowrap; font-size: clamp(2rem, 4.4vw, 4rem); }.admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1fr .75fr .9fr .9fr .9fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row .select-all { min-width: auto; flex-direction: row; align-items: center; gap: 8px; }.action-row .select-all input { width: 18px; height: 18px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
@@ -155,7 +156,10 @@ $suggestions = loadSuggestions();
         <div class="edit-fields">
           <label for="edit-topic">Thema<input id="edit-topic" name="topic" type="text" maxlength="256" disabled></label>
           <label for="edit-model">Modell<select id="edit-model" name="model" disabled><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
-          <label for="edit-leapos-version">LeapOS-Version<select id="edit-leapos-version" name="leapos_version" disabled><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">Nicht bekannt</option><?php foreach (LEAPOS_VERSIONS as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
+          <div class="edit-version-fields">
+            <label for="edit-leapos-version">LeapOS-Version<select id="edit-leapos-version" name="leapos_version" disabled><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?><option value="<?= e(ADD_LEAPOS_VERSION) ?>">Version hinzufügen …</option></select></label>
+            <label class="version-custom-field" id="edit-version-custom-field" for="edit-leapos-version-custom" hidden><span>Neue Versionsnummer <span>*</span></span><input id="edit-leapos-version-custom" name="leapos_version_custom" type="text" maxlength="30" pattern="[0-9]+(\.[0-9]+)*" disabled></label>
+          </div>
           <label for="edit-category">Kategorie<select id="edit-category" name="category" disabled><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?></select></label>
           <label for="edit-classification">Einordnung<select id="edit-classification" name="classification" disabled><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?></select></label>
           <label class="edit-suggestion" for="edit-suggestion">Vorschlag<textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
@@ -176,21 +180,18 @@ $suggestions = loadSuggestions();
       <div class="section-heading"><div><p class="eyebrow">Verwaltung</p><h2><?= count($suggestions) ?> Einträge</h2></div></div>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Auswahl</th><th>Nr.</th><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>LeapOS-Version</th><th>Kategorie</th><th>Einordnung</th><th>Vorschlag</th><th>Status</th></tr></thead>
+          <thead><tr><th>Auswahl</th><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
           <tbody>
-          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="10">Noch keine Vorschläge erfasst.</td></tr>
+          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
               <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-leapos-version="<?= e($item['leapos_version'] ?? UNKNOWN_LEAPOS_VERSION) ?>" data-category="<?= e($item['category'] ?? 'Sonstige') ?>" data-classification="<?= e($item['classification'] ?? 'Vorschlag') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="Eintrag auswählen"></td>
               <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
               <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
-              <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>
-              <td data-label="LeapOS-Version"><?= e(($item['leapos_version'] ?? '') === UNKNOWN_LEAPOS_VERSION ? 'Nicht bekannt' : ($item['leapos_version'] ?? 'Nicht angegeben')) ?></td>
-              <td data-label="Kategorie"><?= e($item['category'] ?? 'Nicht angegeben') ?></td>
-              <td data-label="Einordnung"><?= e($item['classification'] ?? 'Nicht angegeben') ?></td>
+              <td data-label="Modell / LeapOS"><div class="model-version-tags"><span class="model-tag"><?= e($item['model'] ?? '---') ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
               <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
-              <td data-label="Status"><span class="status status-<?= e($item['status'] ?? 'erfasst') ?>"><?= e($item['status'] ?? 'erfasst') ?></span></td>
             </tr>
           <?php endforeach; endif; ?>
           </tbody>
@@ -204,6 +205,8 @@ $suggestions = loadSuggestions();
     const topic = document.getElementById('edit-topic');
     const model = document.getElementById('edit-model');
     const leaposVersion = document.getElementById('edit-leapos-version');
+    const leaposVersionCustomField = document.getElementById('edit-version-custom-field');
+    const leaposVersionCustom = document.getElementById('edit-leapos-version-custom');
     const category = document.getElementById('edit-category');
     const classification = document.getElementById('edit-classification');
     const suggestion = document.getElementById('edit-suggestion');
@@ -217,7 +220,13 @@ $suggestions = loadSuggestions();
       selectedId.value = single ? single.value : '';
       topic.value = single ? single.dataset.topic : '';
       model.value = single ? single.dataset.model : '<?= e(ALL_MODELS) ?>';
-      leaposVersion.value = single ? single.dataset.leaposVersion : '<?= e(UNKNOWN_LEAPOS_VERSION) ?>';
+      const savedVersion = single ? single.dataset.leaposVersion : '<?= e(UNKNOWN_LEAPOS_VERSION) ?>';
+      const normalizedVersion = savedVersion === '<?= e(LEGACY_UNKNOWN_LEAPOS_VERSION) ?>' ? '<?= e(UNKNOWN_LEAPOS_VERSION) ?>' : savedVersion;
+      const isCustomVersion = single && ![...leaposVersion.options].some((option) => option.value === normalizedVersion);
+      leaposVersion.value = isCustomVersion ? '<?= e(ADD_LEAPOS_VERSION) ?>' : normalizedVersion;
+      leaposVersionCustom.value = isCustomVersion ? savedVersion : '';
+      leaposVersionCustomField.hidden = !isCustomVersion;
+      leaposVersionCustom.required = Boolean(isCustomVersion);
       category.value = single ? single.dataset.category : 'Sonstige';
       classification.value = single ? single.dataset.classification : 'Vorschlag';
       suggestion.value = single ? single.dataset.suggestion : '';
@@ -225,6 +234,7 @@ $suggestions = loadSuggestions();
       topic.disabled = !single;
       model.disabled = !single;
       leaposVersion.disabled = !single;
+      leaposVersionCustom.disabled = !single || !isCustomVersion;
       category.disabled = !single;
       classification.disabled = !single;
       suggestion.disabled = !single;
@@ -234,6 +244,15 @@ $suggestions = loadSuggestions();
       selectionHelp.textContent = selected.length === 0 ? 'Bitte eine Zeile auswählen.' : (single ? 'Eine Zeile ausgewählt: Felder können bearbeitet werden.' : selected.length + ' Zeilen ausgewählt: Status ändern oder löschen ist möglich.');
     }
     checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+    leaposVersion.addEventListener('change', () => {
+      const addingVersion = leaposVersion.value === '<?= e(ADD_LEAPOS_VERSION) ?>';
+      leaposVersionCustomField.hidden = !addingVersion;
+      leaposVersionCustom.disabled = !addingVersion;
+      leaposVersionCustom.required = addingVersion;
+      if (!addingVersion) {
+        leaposVersionCustom.value = '';
+      }
+    });
     selectAll.addEventListener('change', () => {
       checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
       updateSelection();

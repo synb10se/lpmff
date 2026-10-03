@@ -5,6 +5,7 @@ require __DIR__ . '/lib.php';
 $error = null;
 $notice = null;
 $oldInput = ['topic' => '', 'model' => ALL_MODELS, 'leapos_version' => UNKNOWN_LEAPOS_VERSION, 'category' => '', 'classification' => '', 'suggestion' => ''];
+$isAddingLeapOsVersion = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['saved'])) {
   $notice = 'Der Vorschlag wurde eingetragen.';
@@ -14,11 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $oldInput = [
         'topic' => cleanText($_POST['topic'] ?? '', 256),
         'model' => cleanText($_POST['model'] ?? '', 20),
-        'leapos_version' => cleanText($_POST['leapos_version'] ?? '', 30),
+        'leapos_version' => resolveLeapOsVersion($_POST['leapos_version'] ?? '', $_POST['leapos_version_custom'] ?? ''),
         'category' => cleanText($_POST['category'] ?? '', 40),
         'classification' => cleanText($_POST['classification'] ?? '', 40),
         'suggestion' => cleanText($_POST['suggestion'] ?? '', 10000),
     ];
+      $isAddingLeapOsVersion = cleanText($_POST['leapos_version'] ?? '', 30) === ADD_LEAPOS_VERSION;
 
     if ($oldInput['topic'] === '' || mb_strlen($oldInput['topic']) > 256) {
         $error = 'Bitte ein Thema mit maximal 256 Zeichen eingeben.';
@@ -56,7 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$suggestions = array_reverse(loadSuggestions());
+$allSuggestions = loadSuggestions();
+$availableLeapOsVersions = availableLeapOsVersions($allSuggestions);
+$suggestions = array_reverse($allSuggestions);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -66,7 +70,7 @@ $suggestions = array_reverse(loadSuggestions());
   <title>Verbesserungsvorschläge an Leapmotor</title>
   <link rel="icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon" sizes="32x32">
   <link rel="shortcut icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <main class="page-shell">
@@ -99,14 +103,20 @@ $suggestions = array_reverse(loadSuggestions());
               <?php endforeach; ?>
             </select>
           </label>
-          <label for="leapos_version"><span>LeapOS-Version <span>*</span></span>
-            <select id="leapos_version" name="leapos_version" required>
-              <option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"<?= $oldInput['leapos_version'] === UNKNOWN_LEAPOS_VERSION ? ' selected' : '' ?>>Nicht bekannt</option>
-              <?php foreach (LEAPOS_VERSIONS as $version): ?>
-                <option value="<?= e($version) ?>"<?= $oldInput['leapos_version'] === $version ? ' selected' : '' ?>><?= e($version) ?></option>
+          <div class="version-fields">
+            <label for="leapos_version"><span>LeapOS-Version <span>*</span></span>
+              <select id="leapos_version" name="leapos_version" required>
+                <option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"<?= in_array($oldInput['leapos_version'], [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? ' selected' : '' ?>>alle</option>
+              <?php foreach ($availableLeapOsVersions as $version): ?>
+                  <option value="<?= e($version) ?>"<?= $oldInput['leapos_version'] === $version ? ' selected' : '' ?>><?= e($version) ?></option>
               <?php endforeach; ?>
-            </select>
-          </label>
+                <option value="<?= e(ADD_LEAPOS_VERSION) ?>"<?= $isAddingLeapOsVersion ? ' selected' : '' ?>>Version hinzufügen …</option>
+              </select>
+            </label>
+            <label class="version-custom-field" for="leapos_version_custom"<?= $isAddingLeapOsVersion ? '' : ' hidden' ?>><span>Neue Versionsnummer <span>*</span></span>
+              <input id="leapos_version_custom" name="leapos_version_custom" type="text" maxlength="30" pattern="[0-9]+(\.[0-9]+)*" value="<?= $isAddingLeapOsVersion ? e($oldInput['leapos_version']) : '' ?>"<?= $isAddingLeapOsVersion ? ' required' : '' ?>>
+            </label>
+          </div>
           <label for="category"><span>Kategorie <span>*</span></span>
             <select id="category" name="category" required>
               <option value="" disabled<?= $oldInput['category'] === '' ? ' selected' : '' ?>>Bitte auswählen</option>
@@ -140,31 +150,23 @@ $suggestions = array_reverse(loadSuggestions());
         </div>
         <div class="section-actions">
           <span class="count-badge"><?= count($suggestions) ?> Einträge</span>
-          <button class="help-button" type="button" id="status-help-open" aria-haspopup="dialog">Status-Hilfe</button>
+          <button class="help-button" type="button" id="help-open" aria-haspopup="dialog">Hilfe</button>
         </div>
-      </div>
-      <div class="symbol-legend" aria-label="Symbolerklärung">
-        <div><strong>Kategorie</strong><span><?php foreach (CATEGORIES as $category): ?><?= renderSymbol('category', $category) ?> <?= e($category) ?><?php endforeach; ?></span></div>
-        <div><strong>Einordnung</strong><span><?php foreach (CLASSIFICATIONS as $classification): ?><?= renderSymbol('classification', $classification) ?> <?= e($classification) ?><?php endforeach; ?></span></div>
-        <div><strong>Status</strong><span><?php foreach (STATUSES as $status): ?><?= renderSymbol('status', $status) ?> <?= e($status) ?><?php endforeach; ?></span></div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nr.</th><th>Erfasst am</th><th>Thema</th><th>Modell</th><th>LeapOS-Version</th><th>Kategorie</th><th>Einordnung</th><th>Vorschlag</th><th>Status</th></tr></thead>
+          <thead><tr><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
           <tbody>
           <?php if ($suggestions === []): ?>
-            <tr><td class="empty-state" colspan="9">Noch keine Vorschläge erfasst.</td></tr>
+            <tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr>
               <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
               <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
-              <td data-label="Modell"><span class="model-tag"><?= e($item['model'] ?? '') ?></span></td>
-              <td data-label="LeapOS-Version"><?= e(($item['leapos_version'] ?? '') === UNKNOWN_LEAPOS_VERSION ? 'Nicht bekannt' : ($item['leapos_version'] ?? 'Nicht angegeben')) ?></td>
-              <td data-label="Kategorie"><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></td>
-              <td data-label="Einordnung"><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></td>
+              <td data-label="Modell / LeapOS"><div class="model-version-tags"><span class="model-tag"><?= e($item['model'] ?? '---') ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
               <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
-              <td data-label="Status"><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></td>
             </tr>
           <?php endforeach; endif; ?>
           </tbody>
@@ -172,39 +174,87 @@ $suggestions = array_reverse(loadSuggestions());
       </div>
     </section>
 
-    <dialog class="help-dialog" id="status-help" aria-labelledby="status-help-title">
+    <dialog class="help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="help-dialog-content">
         <div class="help-dialog-header">
           <div>
             <p class="eyebrow">Übersicht</p>
-            <h2 id="status-help-title">Bedeutung der Status</h2>
+            <h2 id="help-title">Hilfe</h2>
           </div>
-          <button class="dialog-close" type="button" id="status-help-close" aria-label="Status-Hilfe schließen">&times;</button>
+          <button class="dialog-close" type="button" id="help-close" aria-label="Hilfe schließen">&times;</button>
         </div>
-        <dl class="status-help-list">
-          <div><dt><span class="status status-erfasst">erfasst</span></dt><dd>Der Vorschlag ist eingegangen und wurde noch nicht geprüft.</dd></div>
-          <div><dt><span class="status status-geprüft">geprüft</span></dt><dd>Der Vorschlag wurde inhaltlich geprüft und für die weitere Bearbeitung freigegeben.</dd></div>
-          <div><dt><span class="status status-versendet">versendet</span></dt><dd>Der Vorschlag wurde an Leapmotor weitergeleitet.</dd></div>
-          <div><dt><span class="status status-abgelehnt">abgelehnt</span></dt><dd>Der Vorschlag wird von Leapmotor leider nicht weiterverfolgt.</dd></div>
-          <div><dt><span class="status status-bestätigt">bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen und bestätigt.</dd></div>
-          <div><dt><span class="status status-angekündigt">angekündigt</span></dt><dd>Die Umsetzung des Vorschlags wurde für das nächste Release angekündigt.</dd></div>
-          <div><dt><span class="status status-verfügbar">verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist jetzt prinzipiell verfügbar.</dd></div>
-        </dl>
+        <div class="help-sections">
+          <section class="help-guide" aria-labelledby="help-guide-title">
+            <h3 id="help-guide-title">Bedienung</h3>
+            <div class="help-guide-grid">
+              <div>
+                <h4>Benutzer</h4>
+                <p>„Neue Meldung“ öffnen, die Angaben ausfüllen und den Vorschlag eintragen. Den Bearbeitungsstand sehen Sie anschließend in der Übersicht.</p>
+              </div>
+              <div>
+                <h4>Administratoren</h4>
+                <p>„Bearbeitung“ öffnen und anmelden. Eine ausgewählte Zeile kann bearbeitet werden; mehrere ausgewählte Einträge lassen sich gemeinsam im Status ändern oder löschen.</p>
+              </div>
+            </div>
+          </section>
+          <section class="help-section" aria-labelledby="help-categories-title">
+            <h3 id="help-categories-title">Kategorie</h3>
+            <ul class="help-symbol-list">
+              <?php foreach (CATEGORIES as $category): ?>
+                <li><?= renderSymbol('category', $category) ?><span><?= e($category) ?></span></li>
+              <?php endforeach; ?>
+            </ul>
+          </section>
+          <section class="help-section" aria-labelledby="help-classifications-title">
+            <h3 id="help-classifications-title">Einordnung</h3>
+            <ul class="help-symbol-list">
+              <?php foreach (CLASSIFICATIONS as $classification): ?>
+                <li><?= renderSymbol('classification', $classification) ?><span><?= e($classification) ?></span></li>
+              <?php endforeach; ?>
+            </ul>
+          </section>
+          <section class="help-section help-status-section" aria-labelledby="help-status-title">
+            <h3 id="help-status-title">Status</h3>
+            <dl class="status-help-list">
+              <div><dt><?= renderSymbol('status', 'erfasst') ?><span>erfasst</span></dt><dd>Der Vorschlag ist eingegangen und wurde noch nicht geprüft.</dd></div>
+              <div><dt><?= renderSymbol('status', 'geprüft') ?><span>geprüft</span></dt><dd>Der Vorschlag wurde geprüft und für die weitere Bearbeitung freigegeben.</dd></div>
+              <div><dt><?= renderSymbol('status', 'versendet') ?><span>versendet</span></dt><dd>Der Vorschlag wurde an Leapmotor weitergeleitet.</dd></div>
+              <div><dt><?= renderSymbol('status', 'abgelehnt') ?><span>abgelehnt</span></dt><dd>Der Vorschlag wird nicht weiterverfolgt.</dd></div>
+              <div><dt><?= renderSymbol('status', 'bestätigt') ?><span>bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen und bestätigt.</dd></div>
+              <div><dt><?= renderSymbol('status', 'angekündigt') ?><span>angekündigt</span></dt><dd>Die Umsetzung wurde für ein nächstes Release angekündigt.</dd></div>
+              <div><dt><?= renderSymbol('status', 'verfügbar') ?><span>verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist prinzipiell verfügbar.</dd></div>
+            </dl>
+          </section>
+        </div>
       </div>
     </dialog>
   </main>
   <script>
-    const statusHelp = document.getElementById('status-help');
-    const openStatusHelp = document.getElementById('status-help-open');
-    const closeStatusHelp = document.getElementById('status-help-close');
+    const helpDialog = document.getElementById('help-dialog');
+    const openHelp = document.getElementById('help-open');
+    const closeHelp = document.getElementById('help-close');
+    const leapOsVersionSelect = document.getElementById('leapos_version');
+    const leapOsVersionCustomField = document.querySelector('.version-custom-field');
+    const leapOsVersionCustomInput = document.getElementById('leapos_version_custom');
 
-    openStatusHelp.addEventListener('click', () => statusHelp.showModal());
-    closeStatusHelp.addEventListener('click', () => statusHelp.close());
-    statusHelp.addEventListener('click', (event) => {
-      if (event.target === statusHelp) {
-        statusHelp.close();
+    function updateLeapOsVersionInput() {
+      const addingVersion = leapOsVersionSelect.value === '<?= e(ADD_LEAPOS_VERSION) ?>';
+      leapOsVersionCustomField.hidden = !addingVersion;
+      leapOsVersionCustomInput.required = addingVersion;
+      if (!addingVersion) {
+        leapOsVersionCustomInput.value = '';
+      }
+    }
+
+    openHelp.addEventListener('click', () => helpDialog.showModal());
+    closeHelp.addEventListener('click', () => helpDialog.close());
+    helpDialog.addEventListener('click', (event) => {
+      if (event.target === helpDialog) {
+        helpDialog.close();
       }
     });
+    leapOsVersionSelect.addEventListener('change', updateLeapOsVersionInput);
+    updateLeapOsVersionInput();
   </script>
 </body>
 </html>

@@ -5,7 +5,9 @@ const SUGGESTION_FILE = __DIR__ . '/data/suggestions.json';
 const MODELS = ['B03X', 'B05', 'B10', 'C10', 'T03'];
 const ALL_MODELS = 'alle';
 const LEAPOS_VERSIONS = ['4.31.22'];
-const UNKNOWN_LEAPOS_VERSION = 'nicht bekannt';
+const UNKNOWN_LEAPOS_VERSION = 'alle';
+const LEGACY_UNKNOWN_LEAPOS_VERSION = 'nicht bekannt';
+const ADD_LEAPOS_VERSION = '__add_leapos_version__';
 const CATEGORIES = ['App', 'Assistenzsysteme', 'Fahrverhalten', 'Infotainment', 'Laden', 'Sonstige'];
 const CLASSIFICATIONS = ['Einschränkung', 'Fehler', 'Vorschlag'];
 const STATUSES = ['erfasst', 'geprüft', 'versendet', 'abgelehnt', 'bestätigt', 'angekündigt', 'verfügbar'];
@@ -17,7 +19,49 @@ function isValidModel(string $model): bool
 
 function isValidLeapOsVersion(string $version): bool
 {
-    return $version === UNKNOWN_LEAPOS_VERSION || in_array($version, LEAPOS_VERSIONS, true);
+    return in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true)
+        || in_array($version, LEAPOS_VERSIONS, true)
+        || preg_match('/\A\d+(?:\.\d+)*\z/', $version) === 1;
+}
+
+function isPredefinedLeapOsVersion(string $version): bool
+{
+    return in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION, ...LEAPOS_VERSIONS], true);
+}
+
+function availableLeapOsVersions(array $suggestions): array
+{
+    $versions = [];
+    foreach ($suggestions as $suggestion) {
+        $version = is_array($suggestion) ? ($suggestion['leapos_version'] ?? null) : null;
+        if (!is_string($version)
+            || !isValidLeapOsVersion($version)
+            || in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true)) {
+            continue;
+        }
+        $versions[] = $version;
+    }
+
+    return array_values(array_unique($versions));
+}
+
+function resolveLeapOsVersion(mixed $selection, mixed $customVersion): string
+{
+    $selection = cleanText($selection, 30);
+    if ($selection === ADD_LEAPOS_VERSION) {
+        return cleanText($customVersion, 30);
+    }
+
+    return $selection === LEGACY_UNKNOWN_LEAPOS_VERSION ? UNKNOWN_LEAPOS_VERSION : $selection;
+}
+
+function displayLeapOsVersion(mixed $version): string
+{
+    if (!is_string($version) || trim($version) === '') {
+        return '---';
+    }
+
+    return in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? 'alle' : $version;
 }
 
 function renderSymbol(string $type, string $value): string

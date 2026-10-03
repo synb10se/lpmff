@@ -19,7 +19,7 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
 
-Die angebotenen LeapOS-Versionen werden in `lib.php` in `LEAPOS_VERSIONS` gepflegt. Neue Versionen lassen sich dort zur Auswahlliste hinzufügen; solange die Version nicht bekannt ist, kann „Nicht bekannt“ gewählt werden.
+Die angebotenen LeapOS-Versionen kombinieren `LEAPOS_VERSIONS` aus `lib.php` mit aktuell gespeicherten Vorschlägen. Benutzer können über „Version hinzufügen …“ eine numerische Versionsnummer mit Punkt-Segmenten eingeben. Ändert oder löscht ein Administrator den letzten Vorschlag mit einer solchen Version, wird sie anschließend nicht mehr angeboten.
 
 URL-Parameter wie `username`, `userID` und `userid` werden nicht ausgewertet. Vorschläge enthalten keine Angaben zum Autor oder zu einer Autorennummer.
 
