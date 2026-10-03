@@ -19,6 +19,8 @@ Neue Einträge erhalten automatisch den Status `erfasst`.
 Die öffentliche Seite liegt in `index.php` und die Verwaltung ist unter `…/admin` erreichbar. 
 Die JSON-Datei ist zusätzlich durch `…/data/.htaccess` vor direktem Abruf geschützt.
 
+Die angebotenen LeapOS-Versionen werden in `lib.php` in `LEAPOS_VERSIONS` gepflegt. Neue Versionen lassen sich dort zur Auswahlliste hinzufügen; solange die Version nicht bekannt ist, kann „Nicht bekannt“ gewählt werden.
+
 URL-Parameter wie `username`, `userID` und `userid` werden nicht ausgewertet. Vorschläge enthalten keine Angaben zum Autor oder zu einer Autorennummer.
 
 Unter `…/export` gibt es eine weitere passwortgeschützte Seite. Sie zeigt ausschließlich Einträge mit dem Status `geprüft` auf Englisch und erlaubt den Export ausgewählter oder aller Einträge als CSV bzw. Excel-kompatible `.xls`-Datei.
