@@ -110,6 +110,7 @@ tr:last-child td { border-bottom: 0; }.suggestion-cell { min-width: 0; line-heig
 .table-filters .table-filter-search { grid-column: span 1; }
 .filter-reset { min-height: 36px; padding: 7px 10px; color: var(--teal-dark); border: 1px solid #9fcac4; border-radius: 3px; background: transparent; cursor: pointer; font: inherit; font-size: .76rem; font-weight: 700; white-space: nowrap; }
 .filter-reset:hover, .filter-reset:focus-visible { color: var(--white); background: var(--teal); }
+.search-highlight { color: var(--ink); background: #ffe28a; border-radius: 2px; padding: 0 1px; }
 .table-section tr[hidden] { display: none !important; }
 .public-table-section th:nth-child(1), .public-table-section td:nth-child(1) { width: 68px; }
 .public-table-section th:nth-child(2), .public-table-section td:nth-child(2) { width: 152px; }

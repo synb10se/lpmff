@@ -287,6 +287,39 @@ $suggestions = array_reverse($allSuggestions);
         return filterValue === rowValue;
       }
 
+      function highlightText(element, searchValue) {
+        element.querySelectorAll('mark.search-highlight').forEach((mark) => {
+          mark.replaceWith(document.createTextNode(mark.textContent ?? ''));
+        });
+        element.normalize();
+        if (searchValue === '') return;
+
+        const escapedSearch = searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const textNodes = [];
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+        textNodes.forEach((textNode) => {
+          const text = textNode.nodeValue ?? '';
+          const matcher = new RegExp(escapedSearch, 'giu');
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+          let match;
+          while ((match = matcher.exec(text)) !== null) {
+            fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
+            const mark = document.createElement('mark');
+            mark.className = 'search-highlight';
+            mark.textContent = match[0];
+            fragment.append(mark);
+            lastIndex = matcher.lastIndex;
+          }
+          if (lastIndex > 0) {
+            fragment.append(document.createTextNode(text.slice(lastIndex)));
+            textNode.replaceWith(fragment);
+          }
+        });
+      }
+
       function applyFilters() {
         const searchValue = search.value.trim().toLocaleLowerCase('de');
         let visibleCount = 0;
@@ -296,6 +329,8 @@ $suggestions = array_reverse($allSuggestions);
           const matchesDate = (!dateFrom.value || rowDate >= dateFrom.value) && (!dateTo.value || rowDate <= dateTo.value);
           const matchesSelects = selectFields.every(({ control, dataKey }) => matchesFilter(control.value, row.dataset[dataKey]));
           const visible = matchesDate && matchesSelects && (!searchValue || rowText.includes(searchValue));
+          highlightText(row.querySelector('[data-label="Thema"]'), searchValue);
+          highlightText(row.querySelector('[data-label="Vorschlag"]'), searchValue);
           row.hidden = !visible;
           if (visible) visibleCount++;
         });
