@@ -64,6 +64,12 @@ function displayLeapOsVersion(mixed $version): string
     return in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? 'alle' : $version;
 }
 
+function stylesheetVersion(): string
+{
+    $hash = hash_file('sha256', __DIR__ . '/style.css');
+    return $hash === false ? '0' : substr($hash, 0, 16);
+}
+
 function renderSymbol(string $type, string $value): string
 {
     $labels = [

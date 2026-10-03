@@ -48,7 +48,7 @@ if (!$authenticated) {
   ?>
   <!DOCTYPE html>
   <html lang="de">
-  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css?v=10"></head>
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
   <body><main class="page-shell"><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow">Geschützter Bereich</p><h1 style="font-size: 2.5rem;">Bearbeitung</h1><p class="intro">Bitte Passwort eingeben, um die Vorschläge zu bearbeiten.</p>
   <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
   <form method="post"><input type="hidden" name="action" value="login"><label for="password">Passwort<input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit">Anmelden</button></form>
@@ -133,7 +133,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vorschläge bearbeiten</title>
-  <link rel="stylesheet" href="../style.css?v=10">
+  <link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>">
   <style>
     .admin-panel { margin-bottom: 34px; padding: 22px; background: #e8f2ef; border: 1px solid #c6dfd9; }
     .page-title-nowrap { white-space: nowrap; font-size: clamp(2rem, 4.4vw, 4rem); }.admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1fr .75fr .9fr .9fr .9fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row .select-all { min-width: auto; flex-direction: row; align-items: center; gap: 8px; }.action-row .select-all input { width: 18px; height: 18px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
@@ -178,13 +178,24 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
 
     <section class="table-section admin-table-section">
       <div class="section-heading"><div><p class="eyebrow">Verwaltung</p><h2><?= count($suggestions) ?> Einträge</h2></div></div>
+      <div class="table-filters" data-table-filters aria-label="Tabellenfilter">
+        <label class="table-filter-search">Freitext<input type="search" data-filter-search placeholder="Thema oder Vorschlag"></label>
+        <label>Von<input type="date" data-filter-from></label>
+        <label>Bis<input type="date" data-filter-to></label>
+        <label>Status<select data-filter-status><option value="">Alle Status</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
+        <label>Kategorie<select data-filter-category><option value="">Alle Kategorien</option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
+        <label>Einordnung<select data-filter-classification><option value="">Alle Einordnungen</option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
+        <label>Modell<select data-filter-model><option value="">Alle Modelle</option><option value="__missing__">Nicht angegeben</option><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+        <label>Version<select data-filter-version><option value="">Alle Versionen</option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
+        <button class="filter-reset" type="button" data-filter-reset>Zurücksetzen</button>
+      </div>
       <div class="table-wrap">
         <table class="admin-table">
           <thead><tr><th>Auswahl</th><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
           <tbody>
           <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
-            <tr>
+            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e($item['topic'] ?? '') ?>" data-filter-suggestion="<?= e($item['suggestion'] ?? '') ?>">
               <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-leapos-version="<?= e($item['leapos_version'] ?? UNKNOWN_LEAPOS_VERSION) ?>" data-category="<?= e($item['category'] ?? 'Sonstige') ?>" data-classification="<?= e($item['classification'] ?? 'Vorschlag') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="Eintrag auswählen"></td>
               <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
@@ -194,6 +205,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
               <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
             </tr>
           <?php endforeach; endif; ?>
+          <tr data-filter-empty hidden><td class="empty-state" colspan="7">Keine passenden Einträge gefunden.</td></tr>
           </tbody>
         </table>
       </div>
@@ -217,6 +229,8 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
     function updateSelection() {
       const selected = checkboxes.filter((checkbox) => checkbox.checked);
       const single = selected.length === 1 ? selected[0] : null;
+      const visibleCheckboxes = checkboxes.filter((checkbox) => !checkbox.closest('tr').hidden);
+      const visibleSelectedCount = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
       selectedId.value = single ? single.value : '';
       topic.value = single ? single.dataset.topic : '';
       model.value = single ? single.dataset.model : '<?= e(ALL_MODELS) ?>';
@@ -239,8 +253,8 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       classification.disabled = !single;
       suggestion.disabled = !single;
       saveButton.disabled = !single;
-      selectAll.checked = checkboxes.length > 0 && selected.length === checkboxes.length;
-      selectAll.indeterminate = selected.length > 0 && selected.length < checkboxes.length;
+      selectAll.checked = visibleCheckboxes.length > 0 && visibleSelectedCount === visibleCheckboxes.length;
+      selectAll.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleCheckboxes.length;
       selectionHelp.textContent = selected.length === 0 ? 'Bitte eine Zeile auswählen.' : (single ? 'Eine Zeile ausgewählt: Felder können bearbeitet werden.' : selected.length + ' Zeilen ausgewählt: Status ändern oder löschen ist möglich.');
     }
     checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
@@ -254,7 +268,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       }
     });
     selectAll.addEventListener('change', () => {
-      checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+      checkboxes.filter((checkbox) => !checkbox.closest('tr').hidden).forEach((checkbox) => { checkbox.checked = selectAll.checked; });
       updateSelection();
     });
     selectionForm.addEventListener('submit', (event) => {
@@ -267,6 +281,53 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
         event.preventDefault();
         selectionHelp.textContent = 'Zum Speichern genau eine Zeile auswählen.';
       }
+    });
+    document.querySelectorAll('[data-table-filters]').forEach((panel) => {
+      const section = panel.closest('.table-section');
+      const rows = [...section.querySelectorAll('tbody tr[data-filter-row]')];
+      const emptyRow = section.querySelector('[data-filter-empty]');
+      const field = (name) => panel.querySelector(`[data-filter-${name}]`);
+      const dateFrom = field('from');
+      const dateTo = field('to');
+      const search = field('search');
+      const selectFields = ['status', 'category', 'classification', 'model', 'version'].map((name) => ({
+        control: field(name),
+        dataKey: `filter${name[0].toUpperCase()}${name.slice(1)}`,
+      }));
+
+      function matchesFilter(filterValue, rowValue) {
+        if (filterValue === '') return true;
+        if (filterValue === '__missing__') return rowValue === '';
+        return filterValue === rowValue;
+      }
+
+      function applyFilters() {
+        const searchValue = search.value.trim().toLocaleLowerCase('de');
+        let visibleCount = 0;
+        rows.forEach((row) => {
+          const rowDate = row.dataset.filterDate;
+          const rowText = `${row.dataset.filterTopic} ${row.dataset.filterSuggestion}`.toLocaleLowerCase('de');
+          const matchesDate = (!dateFrom.value || rowDate >= dateFrom.value) && (!dateTo.value || rowDate <= dateTo.value);
+          const matchesSelects = selectFields.every(({ control, dataKey }) => matchesFilter(control.value, row.dataset[dataKey]));
+          const visible = matchesDate && matchesSelects && (!searchValue || rowText.includes(searchValue));
+          row.hidden = !visible;
+          const checkbox = row.querySelector('input[name="ids[]"]');
+          if (!visible && checkbox) checkbox.checked = false;
+          if (visible) visibleCount++;
+        });
+        emptyRow.hidden = visibleCount > 0 || rows.length === 0;
+        updateSelection();
+      }
+
+      panel.querySelectorAll('input, select').forEach((control) => {
+        control.addEventListener('input', applyFilters);
+        control.addEventListener('change', applyFilters);
+      });
+      panel.querySelector('[data-filter-reset]').addEventListener('click', () => {
+        panel.querySelectorAll('input, select').forEach((control) => { control.value = ''; });
+        applyFilters();
+      });
+      applyFilters();
     });
   </script>
 </body>

@@ -70,7 +70,7 @@ $suggestions = array_reverse($allSuggestions);
   <title>Verbesserungsvorschläge an Leapmotor</title>
   <link rel="icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon" sizes="32x32">
   <link rel="shortcut icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=<?= e(stylesheetVersion()) ?>">
 </head>
 <body>
   <main class="page-shell">
@@ -153,6 +153,17 @@ $suggestions = array_reverse($allSuggestions);
           <button class="help-button" type="button" id="help-open" aria-haspopup="dialog">Hilfe</button>
         </div>
       </div>
+      <div class="table-filters" data-table-filters aria-label="Tabellenfilter">
+        <label class="table-filter-search">Freitext<input type="search" data-filter-search placeholder="Thema oder Vorschlag"></label>
+        <label>Von<input type="date" data-filter-from></label>
+        <label>Bis<input type="date" data-filter-to></label>
+        <label>Status<select data-filter-status><option value="">Alle Status</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
+        <label>Kategorie<select data-filter-category><option value="">Alle Kategorien</option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
+        <label>Einordnung<select data-filter-classification><option value="">Alle Einordnungen</option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
+        <label>Modell<select data-filter-model><option value="">Alle Modelle</option><option value="__missing__">Nicht angegeben</option><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+        <label>Version<select data-filter-version><option value="">Alle Versionen</option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
+        <button class="filter-reset" type="button" data-filter-reset>Zurücksetzen</button>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
@@ -160,7 +171,7 @@ $suggestions = array_reverse($allSuggestions);
           <?php if ($suggestions === []): ?>
             <tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
           <?php else: foreach ($suggestions as $item): ?>
-            <tr>
+            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e($item['topic'] ?? '') ?>" data-filter-suggestion="<?= e($item['suggestion'] ?? '') ?>">
               <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
               <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
@@ -169,6 +180,7 @@ $suggestions = array_reverse($allSuggestions);
               <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
             </tr>
           <?php endforeach; endif; ?>
+          <tr data-filter-empty hidden><td class="empty-state" colspan="6">Keine passenden Einträge gefunden.</td></tr>
           </tbody>
         </table>
       </div>
@@ -255,6 +267,51 @@ $suggestions = array_reverse($allSuggestions);
     });
     leapOsVersionSelect.addEventListener('change', updateLeapOsVersionInput);
     updateLeapOsVersionInput();
+
+    document.querySelectorAll('[data-table-filters]').forEach((panel) => {
+      const section = panel.closest('.table-section');
+      const rows = [...section.querySelectorAll('tbody tr[data-filter-row]')];
+      const emptyRow = section.querySelector('[data-filter-empty]');
+      const field = (name) => panel.querySelector(`[data-filter-${name}]`);
+      const dateFrom = field('from');
+      const dateTo = field('to');
+      const search = field('search');
+      const selectFields = ['status', 'category', 'classification', 'model', 'version'].map((name) => ({
+        control: field(name),
+        dataKey: `filter${name[0].toUpperCase()}${name.slice(1)}`,
+      }));
+
+      function matchesFilter(filterValue, rowValue) {
+        if (filterValue === '') return true;
+        if (filterValue === '__missing__') return rowValue === '';
+        return filterValue === rowValue;
+      }
+
+      function applyFilters() {
+        const searchValue = search.value.trim().toLocaleLowerCase('de');
+        let visibleCount = 0;
+        rows.forEach((row) => {
+          const rowDate = row.dataset.filterDate;
+          const rowText = `${row.dataset.filterTopic} ${row.dataset.filterSuggestion}`.toLocaleLowerCase('de');
+          const matchesDate = (!dateFrom.value || rowDate >= dateFrom.value) && (!dateTo.value || rowDate <= dateTo.value);
+          const matchesSelects = selectFields.every(({ control, dataKey }) => matchesFilter(control.value, row.dataset[dataKey]));
+          const visible = matchesDate && matchesSelects && (!searchValue || rowText.includes(searchValue));
+          row.hidden = !visible;
+          if (visible) visibleCount++;
+        });
+        emptyRow.hidden = visibleCount > 0 || rows.length === 0;
+      }
+
+      panel.querySelectorAll('input, select').forEach((control) => {
+        control.addEventListener('input', applyFilters);
+        control.addEventListener('change', applyFilters);
+      });
+      panel.querySelector('[data-filter-reset]').addEventListener('click', () => {
+        panel.querySelectorAll('input, select').forEach((control) => { control.value = ''; });
+        applyFilters();
+      });
+      applyFilters();
+    });
   </script>
 </body>
 </html>
