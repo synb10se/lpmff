@@ -8,7 +8,7 @@ $oldInput = ['topic' => '', 'model' => ALL_MODELS, 'leapos_version' => UNKNOWN_L
 $isAddingLeapOsVersion = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['saved'])) {
-  $notice = 'Der Vorschlag wurde eingetragen.';
+  $notice = t('notice.submitted');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -23,17 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $isAddingLeapOsVersion = cleanText($_POST['leapos_version'] ?? '', 30) === ADD_LEAPOS_VERSION;
 
     if ($oldInput['topic'] === '' || mb_strlen($oldInput['topic']) > 256) {
-        $error = 'Bitte ein Thema mit maximal 256 Zeichen eingeben.';
+      $error = t('error.topic');
       } elseif (!isValidModel($oldInput['model'])) {
-        $error = 'Bitte ein gültiges Modell auswählen.';
+      $error = t('error.model');
     } elseif (!isValidLeapOsVersion($oldInput['leapos_version'])) {
-        $error = 'Bitte eine gültige LeapOS-Version auswählen.';
+      $error = t('error.version');
     } elseif (!in_array($oldInput['category'], CATEGORIES, true)) {
-        $error = 'Bitte eine gültige Kategorie auswählen.';
+      $error = t('error.category');
     } elseif (!in_array($oldInput['classification'], CLASSIFICATIONS, true)) {
-        $error = 'Bitte eine gültige Einordnung auswählen.';
+      $error = t('error.classification');
     } elseif ($oldInput['suggestion'] === '') {
-        $error = 'Bitte einen Vorschlag eingeben.';
+      $error = t('error.suggestion');
     } else {
         $suggestions = loadSuggestions();
         $suggestions[] = [
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           header('Location: ' . $_SERVER['PHP_SELF'] . '?saved=1', true, 303);
           exit;
         } else {
-            $error = 'Der Vorschlag konnte nicht gespeichert werden. Bitte die Schreibrechte prüfen.';
+            $error = t('error.submit');
         }
     }
 }
@@ -63,11 +63,11 @@ $availableLeapOsVersions = availableLeapOsVersions($allSuggestions);
 $suggestions = array_reverse($allSuggestions);
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= e(currentLanguage()) ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verbesserungsvorschläge an Leapmotor</title>
+  <title><?= e(t('title.document')) ?></title>
   <link rel="icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon" sizes="32x32">
   <link rel="shortcut icon" href="/sfi_LeapOS/favicon.ico?v=4" type="image/x-icon">
   <link rel="stylesheet" href="style.css?v=<?= e(stylesheetVersion()) ?>">
@@ -76,68 +76,68 @@ $suggestions = array_reverse($allSuggestions);
   <main class="page-shell">
     <header class="page-header">
       <div>
-        <p class="eyebrow">LeapOS und mehr</p>
-        <h1>Verbesserungsvorschläge</h1>
-        <p class="intro">Ideen sammeln, strukturieren und kommunizieren.</p>
+        <p class="eyebrow"><?= e(t('brand')) ?></p>
+        <h1><?= e(t('title.public')) ?></h1>
+        <p class="intro"><?= e(t('intro.public')) ?></p>
       </div>
-      <div class="area-links"><a class="admin-link" href="admin/?reauth=1">Bearbeitung</a><a class="admin-link" href="export/">Export</a></div>
+      <div class="area-links"><a class="admin-link" href="admin/?reauth=1"><?= e(t('admin.link')) ?></a><a class="admin-link" href="export/"><?= e(t('export.link')) ?></a><?= renderLanguageSelector() ?></div>
     </header>
 
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
 
     <details class="form-panel form-collapsible">
-      <summary class="form-toggle"><span class="eyebrow">Neue Meldung</span><span class="toggle-icon" aria-hidden="true"></span></summary>
+      <summary class="form-toggle"><span class="eyebrow"><?= e(t('entry.new')) ?></span><span class="toggle-icon" aria-hidden="true"></span></summary>
       <div class="form-content">
-        <div class="form-heading"><h2 id="form-title">Was können wir verbessern?</h2><span class="required-note">* Pflichtfeld</span></div>
+        <div class="form-heading"><h2 id="form-title"><?= e(t('entry.prompt')) ?></h2><span class="required-note"><?= e(t('required.note')) ?></span></div>
       <form method="post" action="">
         <div class="form-grid">
-          <label for="topic"><span>Thema <span>*</span></span>
+          <label for="topic"><span><?= e(t('field.topic')) ?> <span>*</span></span>
             <input id="topic" name="topic" type="text" maxlength="256" value="<?= e($oldInput['topic']) ?>" required>
           </label>
-          <label for="model"><span>Modell <span>*</span></span>
+          <label for="model"><span><?= e(t('field.model')) ?> <span>*</span></span>
             <select id="model" name="model" required>
-              <option value="<?= e(ALL_MODELS) ?>"<?= $oldInput['model'] === ALL_MODELS ? ' selected' : '' ?>><?= e(ALL_MODELS) ?></option>
+              <option value="<?= e(ALL_MODELS) ?>"<?= $oldInput['model'] === ALL_MODELS ? ' selected' : '' ?>><?= e(t('model.all')) ?></option>
               <?php foreach (MODELS as $model): ?>
                 <option value="<?= e($model) ?>"<?= $oldInput['model'] === $model ? ' selected' : '' ?>><?= e($model) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
           <div class="version-fields">
-            <label for="leapos_version"><span>LeapOS-Version <span>*</span></span>
+            <label for="leapos_version"><span><?= e(t('field.version')) ?> <span>*</span></span>
               <select id="leapos_version" name="leapos_version" required>
-                <option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"<?= in_array($oldInput['leapos_version'], [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? ' selected' : '' ?>>alle</option>
+                <option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"<?= in_array($oldInput['leapos_version'], [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? ' selected' : '' ?>><?= e(t('version.all')) ?></option>
               <?php foreach ($availableLeapOsVersions as $version): ?>
                   <option value="<?= e($version) ?>"<?= $oldInput['leapos_version'] === $version ? ' selected' : '' ?>><?= e($version) ?></option>
               <?php endforeach; ?>
-                <option value="<?= e(ADD_LEAPOS_VERSION) ?>"<?= $isAddingLeapOsVersion ? ' selected' : '' ?>>Version hinzufügen …</option>
+                <option value="<?= e(ADD_LEAPOS_VERSION) ?>"<?= $isAddingLeapOsVersion ? ' selected' : '' ?>><?= e(t('version.add')) ?></option>
               </select>
             </label>
-            <label class="version-custom-field" for="leapos_version_custom"<?= $isAddingLeapOsVersion ? '' : ' hidden' ?>><span>Neue Versionsnummer <span>*</span></span>
+            <label class="version-custom-field" for="leapos_version_custom"<?= $isAddingLeapOsVersion ? '' : ' hidden' ?>><span><?= e(t('version.new')) ?> <span>*</span></span>
               <input id="leapos_version_custom" name="leapos_version_custom" type="text" maxlength="30" pattern="[0-9]+(\.[0-9]+)*" value="<?= $isAddingLeapOsVersion ? e($oldInput['leapos_version']) : '' ?>"<?= $isAddingLeapOsVersion ? ' required' : '' ?>>
             </label>
           </div>
-          <label for="category"><span>Kategorie <span>*</span></span>
+          <label for="category"><span><?= e(t('field.category')) ?> <span>*</span></span>
             <select id="category" name="category" required>
-              <option value="" disabled<?= $oldInput['category'] === '' ? ' selected' : '' ?>>Bitte auswählen</option>
+              <option value="" disabled<?= $oldInput['category'] === '' ? ' selected' : '' ?>><?= e(t('select.prompt')) ?></option>
               <?php foreach (CATEGORIES as $category): ?>
-                <option value="<?= e($category) ?>"<?= $oldInput['category'] === $category ? ' selected' : '' ?>><?= e($category) ?></option>
+                <option value="<?= e($category) ?>"<?= $oldInput['category'] === $category ? ' selected' : '' ?>><?= e(t('value.' . $category)) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <label for="classification"><span>Einordnung <span>*</span></span>
+          <label for="classification"><span><?= e(t('field.classification')) ?> <span>*</span></span>
             <select id="classification" name="classification" required>
-              <option value="" disabled<?= $oldInput['classification'] === '' ? ' selected' : '' ?>>Bitte auswählen</option>
+              <option value="" disabled<?= $oldInput['classification'] === '' ? ' selected' : '' ?>><?= e(t('select.prompt')) ?></option>
               <?php foreach (CLASSIFICATIONS as $classification): ?>
-                <option value="<?= e($classification) ?>"<?= $oldInput['classification'] === $classification ? ' selected' : '' ?>><?= e($classification) ?></option>
+                <option value="<?= e($classification) ?>"<?= $oldInput['classification'] === $classification ? ' selected' : '' ?>><?= e(t('value.' . $classification)) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <label class="wide-field" for="suggestion"><span>Vorschlag <span>*</span></span>
+          <label class="wide-field" for="suggestion"><span><?= e(t('field.suggestion')) ?> <span>*</span></span>
             <textarea id="suggestion" name="suggestion" rows="5" required><?= e($oldInput['suggestion']) ?></textarea>
           </label>
         </div>
-        <button class="primary-button" type="submit">Eintragen</button>
+        <button class="primary-button" type="submit"><?= e(t('submit.entry')) ?></button>
       </form>
       </div>
     </details>
@@ -145,42 +145,42 @@ $suggestions = array_reverse($allSuggestions);
     <section class="table-section public-table-section" aria-labelledby="list-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Übersicht</p>
-          <h2 id="list-title">Erfasste Vorschläge</h2>
+          <p class="eyebrow"><?= e(t('overview')) ?></p>
+          <h2 id="list-title"><?= e(t('suggestions.recorded')) ?></h2>
         </div>
         <div class="section-actions">
-          <span class="count-badge"><?= count($suggestions) ?> Einträge</span>
-          <button class="help-button" type="button" id="help-open" aria-haspopup="dialog">Hilfe</button>
+          <span class="count-badge"><?= count($suggestions) ?> <?= e(t(count($suggestions) === 1 ? 'entry' : 'entries')) ?></span>
+          <button class="help-button" type="button" id="help-open" aria-haspopup="dialog"><?= e(t('help')) ?></button>
         </div>
       </div>
-      <div class="table-filters" data-table-filters aria-label="Tabellenfilter">
-        <label class="table-filter-search">Freitext<input type="search" data-filter-search placeholder="Thema oder Vorschlag"></label>
-        <label>Von<input type="date" data-filter-from></label>
-        <label>Bis<input type="date" data-filter-to></label>
-        <label>Status<select data-filter-status><option value="">Alle Status</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
-        <label>Kategorie<select data-filter-category><option value="">Alle Kategorien</option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
-        <label>Einordnung<select data-filter-classification><option value="">Alle Einordnungen</option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
-        <label>Modell<select data-filter-model><option value="">Alle Modelle</option><option value="__missing__">Nicht angegeben</option><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
-        <label>Version<select data-filter-version><option value="">Alle Versionen</option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
-        <button class="filter-reset" type="button" data-filter-reset>Zurücksetzen</button>
+      <div class="table-filters" data-table-filters aria-label="<?= e(t('overview')) ?>">
+        <label class="table-filter-search"><?= e(t('filter.search')) ?><input type="search" data-filter-search placeholder="<?= e(t('filter.search.placeholder')) ?>"></label>
+        <label><?= e(t('filter.from')) ?><input type="date" data-filter-from></label>
+        <label><?= e(t('filter.to')) ?><input type="date" data-filter-to></label>
+        <label><?= e(t('filter.status')) ?><select data-filter-status><option value=""><?= e(t('filter.all_statuses')) ?></option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e(t('value.' . $status)) ?></option><?php endforeach; ?></select></label>
+        <label><?= e(t('filter.category')) ?><select data-filter-category><option value=""><?= e(t('filter.all_categories')) ?></option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e(t('value.' . $category)) ?></option><?php endforeach; ?><option value="__missing__"><?= e(t('filter.missing')) ?></option></select></label>
+        <label><?= e(t('filter.classification')) ?><select data-filter-classification><option value=""><?= e(t('filter.all_classifications')) ?></option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e(t('value.' . $classification)) ?></option><?php endforeach; ?><option value="__missing__"><?= e(t('filter.missing')) ?></option></select></label>
+        <label><?= e(t('filter.model')) ?><select data-filter-model><option value=""><?= e(t('filter.all_models')) ?></option><option value="__missing__"><?= e(t('filter.missing')) ?></option><option value="<?= e(ALL_MODELS) ?>"><?= e(t('model.all')) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+        <label><?= e(t('filter.version')) ?><select data-filter-version><option value=""><?= e(t('filter.all_versions')) ?></option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"><?= e(t('version.all')) ?></option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
+        <button class="filter-reset" type="button" data-filter-reset><?= e(t('filter.reset')) ?></button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
+          <thead><tr><th><?= e(t('table.number')) ?></th><th><?= e(t('table.created')) ?></th><th><?= e(t('filter.status')) ?></th><th><?= e(t('table.topic')) ?></th><th><?= e(t('table.model_version')) ?></th><th><?= e(t('table.suggestion')) ?></th></tr></thead>
           <tbody>
           <?php if ($suggestions === []): ?>
-            <tr><td class="empty-state" colspan="6">Noch keine Vorschläge erfasst.</td></tr>
+            <tr><td class="empty-state" colspan="6"><?= e(t('table.empty')) ?></td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e($item['topic'] ?? '') ?>" data-filter-suggestion="<?= e($item['suggestion'] ?? '') ?>">
-              <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
-              <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td data-label="<?= e(t('table.number')) ?>"><?= e($item['number'] ?? '') ?></td>
+              <td data-label="<?= e(t('table.created')) ?>"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
-              <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
-              <td data-label="Modell / LeapOS"><div class="model-version-tags"><span class="model-tag"><?= e($item['model'] ?? '---') ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
-              <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
+              <td data-label="<?= e(t('table.topic')) ?>" data-field="topic"><?= e($item['topic'] ?? '') ?></td>
+              <td data-label="<?= e(t('table.model_version')) ?>"><div class="model-version-tags"><span class="model-tag"><?= e(($item['model'] ?? '') === ALL_MODELS ? t('model.all') : ($item['model'] ?? '---')) ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null) === UNKNOWN_LEAPOS_VERSION ? t('version.all') : displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
+              <td data-label="<?= e(t('table.suggestion')) ?>" data-field="suggestion" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
             </tr>
           <?php endforeach; endif; ?>
-          <tr data-filter-empty hidden><td class="empty-state" colspan="6">Keine passenden Einträge gefunden.</td></tr>
+          <tr data-filter-empty hidden><td class="empty-state" colspan="6"><?= e(t('table.no_matches')) ?></td></tr>
           </tbody>
         </table>
       </div>
@@ -190,51 +190,51 @@ $suggestions = array_reverse($allSuggestions);
       <div class="help-dialog-content">
         <div class="help-dialog-header">
           <div>
-            <p class="eyebrow">Übersicht</p>
-            <h2 id="help-title">Hilfe</h2>
+            <p class="eyebrow"><?= e(t('overview')) ?></p>
+            <h2 id="help-title"><?= e(t('help')) ?></h2>
           </div>
-          <button class="dialog-close" type="button" id="help-close" aria-label="Hilfe schließen">&times;</button>
+          <button class="dialog-close" type="button" id="help-close" aria-label="<?= e(t('dialog.close_help')) ?>">&times;</button>
         </div>
         <div class="help-sections">
           <section class="help-guide" aria-labelledby="help-guide-title">
-            <h3 id="help-guide-title">Bedienung</h3>
+            <h3 id="help-guide-title"><?= e(t('help.operation')) ?></h3>
             <div class="help-guide-grid">
               <div>
-                <h4>Benutzer</h4>
-                <p>„Neue Meldung“ öffnen, die Angaben ausfüllen und den Vorschlag eintragen. Den Bearbeitungsstand sehen Sie anschließend in der Übersicht.</p>
+                <h4><?= e(t('help.users')) ?></h4>
+                <p><?= e(t('help.users.text')) ?></p>
               </div>
               <div>
-                <h4>Administratoren</h4>
-                <p>„Bearbeitung“ öffnen und anmelden. Eine ausgewählte Zeile kann bearbeitet werden; mehrere ausgewählte Einträge lassen sich gemeinsam im Status ändern oder löschen.</p>
+                <h4><?= e(t('help.admins')) ?></h4>
+                <p><?= e(t('help.admins.text')) ?></p>
               </div>
             </div>
           </section>
           <section class="help-section" aria-labelledby="help-categories-title">
-            <h3 id="help-categories-title">Kategorie</h3>
+            <h3 id="help-categories-title"><?= e(t('help.category')) ?></h3>
             <ul class="help-symbol-list">
               <?php foreach (CATEGORIES as $category): ?>
-                <li><?= renderSymbol('category', $category) ?><span><?= e($category) ?></span></li>
+                <li><?= renderSymbol('category', $category) ?><span><?= e(t('value.' . $category)) ?></span></li>
               <?php endforeach; ?>
             </ul>
           </section>
           <section class="help-section" aria-labelledby="help-classifications-title">
-            <h3 id="help-classifications-title">Einordnung</h3>
+            <h3 id="help-classifications-title"><?= e(t('help.classification')) ?></h3>
             <ul class="help-symbol-list">
               <?php foreach (CLASSIFICATIONS as $classification): ?>
-                <li><?= renderSymbol('classification', $classification) ?><span><?= e($classification) ?></span></li>
+                <li><?= renderSymbol('classification', $classification) ?><span><?= e(t('value.' . $classification)) ?></span></li>
               <?php endforeach; ?>
             </ul>
           </section>
           <section class="help-section help-status-section" aria-labelledby="help-status-title">
-            <h3 id="help-status-title">Status</h3>
+            <h3 id="help-status-title"><?= e(t('help.status')) ?></h3>
             <dl class="status-help-list">
-              <div><dt><?= renderSymbol('status', 'erfasst') ?><span>erfasst</span></dt><dd>Der Vorschlag ist eingegangen und wurde noch nicht geprüft.</dd></div>
-              <div><dt><?= renderSymbol('status', 'geprüft') ?><span>geprüft</span></dt><dd>Der Vorschlag wurde geprüft und für die weitere Bearbeitung freigegeben.</dd></div>
-              <div><dt><?= renderSymbol('status', 'versendet') ?><span>versendet</span></dt><dd>Der Vorschlag wurde an Leapmotor weitergeleitet.</dd></div>
-              <div><dt><?= renderSymbol('status', 'abgelehnt') ?><span>abgelehnt</span></dt><dd>Der Vorschlag wird nicht weiterverfolgt.</dd></div>
-              <div><dt><?= renderSymbol('status', 'bestätigt') ?><span>bestätigt</span></dt><dd>Leapmotor hat den Vorschlag aufgenommen und bestätigt.</dd></div>
-              <div><dt><?= renderSymbol('status', 'angekündigt') ?><span>angekündigt</span></dt><dd>Die Umsetzung wurde für ein nächstes Release angekündigt.</dd></div>
-              <div><dt><?= renderSymbol('status', 'verfügbar') ?><span>verfügbar</span></dt><dd>Die vorgeschlagene Verbesserung ist prinzipiell verfügbar.</dd></div>
+              <div><dt><?= renderSymbol('status', 'erfasst') ?><span><?= e(t('value.erfasst')) ?></span></dt><dd><?= e(t('status.erfasst.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'geprüft') ?><span><?= e(t('value.geprüft')) ?></span></dt><dd><?= e(t('status.geprüft.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'versendet') ?><span><?= e(t('value.versendet')) ?></span></dt><dd><?= e(t('status.versendet.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'abgelehnt') ?><span><?= e(t('value.abgelehnt')) ?></span></dt><dd><?= e(t('status.abgelehnt.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'bestätigt') ?><span><?= e(t('value.bestätigt')) ?></span></dt><dd><?= e(t('status.bestätigt.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'angekündigt') ?><span><?= e(t('value.angekündigt')) ?></span></dt><dd><?= e(t('status.angekündigt.help')) ?></dd></div>
+              <div><dt><?= renderSymbol('status', 'verfügbar') ?><span><?= e(t('value.verfügbar')) ?></span></dt><dd><?= e(t('status.verfügbar.help')) ?></dd></div>
             </dl>
           </section>
         </div>
@@ -329,8 +329,8 @@ $suggestions = array_reverse($allSuggestions);
           const matchesDate = (!dateFrom.value || rowDate >= dateFrom.value) && (!dateTo.value || rowDate <= dateTo.value);
           const matchesSelects = selectFields.every(({ control, dataKey }) => matchesFilter(control.value, row.dataset[dataKey]));
           const visible = matchesDate && matchesSelects && (!searchValue || rowText.includes(searchValue));
-          highlightText(row.querySelector('[data-label="Thema"]'), searchValue);
-          highlightText(row.querySelector('[data-label="Vorschlag"]'), searchValue);
+          highlightText(row.querySelector('[data-field="topic"]'), searchValue);
+          highlightText(row.querySelector('[data-field="suggestion"]'), searchValue);
           row.hidden = !visible;
           if (visible) visibleCount++;
         });

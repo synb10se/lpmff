@@ -24,134 +24,205 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
             exit;
         }
     }
-    $error = 'Das Passwort ist nicht korrekt.';
+    $error = t('login.error');
 }
 
 if (!$authenticated) {
     ?>
     <!DOCTYPE html>
-    <html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Export-Anmeldung</title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
-    <body><main class="page-shell"><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow">Geschützter Bereich</p><h1 style="font-size: 2.5rem;">Export</h1><p class="intro">Bitte Passwort eingeben, um geprüfte Vorschläge zu exportieren.</p>
+    <html lang="<?= e(currentLanguage()) ?>"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= e(t('export.login.title')) ?></title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
+    <body><main class="page-shell"><?= renderLanguageSelector(true) ?><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow"><?= e(t('admin.area')) ?></p><h1 style="font-size: 2.5rem;"><?= e(t('export.link')) ?></h1><p class="intro"><?= e(t('export.login.intro')) ?></p>
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
-    <form method="post"><input type="hidden" name="action" value="login"><label for="password">Passwort<input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit">Anmelden</button></form>
+    <form method="post"><input type="hidden" name="action" value="login"><label for="password"><?= e(t('field.password')) ?><input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit"><?= e(t('login.submit')) ?></button></form>
     </section></main></body></html>
     <?php
     exit;
 }
 
-function translateExportContent(string $text): string
+function translateLibreTranslateBatch(array $texts): ?array
 {
-    $trimmed = trim($text);
-    if ($trimmed === '') {
-        return '';
+    $endpoint = libreTranslateEndpoint();
+    $endpointParts = parse_url($endpoint);
+    if ($endpoint === '' || !is_array($endpointParts) || !in_array($endpointParts['scheme'] ?? '', ['http', 'https'], true) || !isset($endpointParts['host'])) {
+        return null;
     }
 
-    $sentences = preg_split('/(?<=[.!?])\s+/', $trimmed, -1, PREG_SPLIT_NO_EMPTY);
-    if ($sentences === false || $sentences === []) {
-        $sentences = [$trimmed];
+    $payload = ['q' => array_values($texts), 'source' => 'de', 'target' => 'en', 'format' => 'text'];
+    $apiKey = trim((string) (getenv('LIBRETRANSLATE_API_KEY') ?: ''));
+    if ($apiKey !== '') {
+        $payload['api_key'] = $apiKey;
     }
 
-    $chunks = [];
-    $current = '';
-    foreach ($sentences as $sentence) {
-        $candidate = $current === '' ? $sentence : $current . ' ' . $sentence;
-        if (mb_strlen($candidate) <= 500) {
-            $current = $candidate;
-            continue;
+    try {
+        $requestBody = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    } catch (JsonException) {
+        return null;
+    }
+
+    $response = null;
+    if (function_exists('curl_init')) {
+        $curl = curl_init($endpoint);
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $requestBody,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $curlResponse = curl_exec($curl);
+        $httpStatus = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        curl_close($curl);
+        if (is_string($curlResponse) && $httpStatus >= 200 && $httpStatus < 300) {
+            $response = $curlResponse;
+        }
+    } else {
+        $response = @file_get_contents($endpoint, false, stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                'content' => $requestBody,
+                'timeout' => 15,
+                'ignore_errors' => true,
+            ],
+        ]));
+    }
+
+    if (!is_string($response) || $response === '') {
+        return null;
+    }
+
+    try {
+        $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        return null;
+    }
+
+    $translations = $decoded['translatedText'] ?? null;
+    if (is_string($translations) && count($texts) === 1) {
+        $translations = [$translations];
+    }
+    if (!is_array($translations) || count($translations) !== count($texts)) {
+        return null;
+    }
+
+    foreach ($translations as &$translation) {
+        if (!is_string($translation) || trim($translation) === '') {
+            return null;
+        }
+        $translation = trim($translation);
+    }
+    unset($translation);
+
+    return $translations;
+}
+
+function translateExportContents(array $texts): array
+{
+    $trimmedTexts = array_map(static fn (mixed $text): string => trim((string) $text), $texts);
+    $chunksByText = [];
+    $allChunks = [];
+
+    foreach ($trimmedTexts as $textIndex => $text) {
+        $sentences = preg_split('/(?<=[.!?])\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
+        if ($sentences === false || $sentences === []) {
+            $sentences = $text === '' ? [] : [$text];
+        }
+
+        $chunks = [];
+        $current = '';
+        foreach ($sentences as $sentence) {
+            $candidate = $current === '' ? $sentence : $current . ' ' . $sentence;
+            if (mb_strlen($candidate) <= 500) {
+                $current = $candidate;
+                continue;
+            }
+            if ($current !== '') {
+                $chunks[] = $current;
+            }
+            $current = $sentence;
         }
         if ($current !== '') {
             $chunks[] = $current;
         }
-        $current = $sentence;
-    }
-    if ($current !== '') {
-        $chunks[] = $current;
-    }
 
-    $translatedParts = [];
-    foreach ($chunks as $chunk) {
-        $translated = null;
-        $urls = [
-            'https://api.mymemory.translated.net/get?q=' . rawurlencode($chunk) . '&langpair=de|en',
-            'https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=en&dt=t&q=' . rawurlencode($chunk),
-        ];
-
-        foreach ($urls as $serviceUrl) {
-            $response = null;
-
-            if (function_exists('curl_init')) {
-                $ch = curl_init($serviceUrl);
-                curl_setopt_array($ch, [
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_CONNECTTIMEOUT => 8,
-                    CURLOPT_TIMEOUT => 15,
-                    CURLOPT_USERAGENT => 'Mozilla/5.0',
-                    CURLOPT_SSL_VERIFYPEER => true,
-                ]);
-                $response = curl_exec($ch);
-                if ($response === false) {
-                    $response = null;
-                }
-                curl_close($ch);
-            }
-
-            if ($response === null && function_exists('file_get_contents')) {
-                try {
-                    $response = @file_get_contents($serviceUrl, false, stream_context_create([
-                        'http' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
-                        'https' => ['method' => 'GET', 'timeout' => 15, 'ignore_errors' => true],
-                    ]));
-                } catch (Throwable $exception) {
-                    $response = null;
-                }
-            }
-
-            if (!is_string($response) || $response === '') {
-                continue;
-            }
-
-            try {
-                $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-            } catch (Throwable $exception) {
-                continue;
-            }
-
-            if (isset($decoded['responseData']['translatedText']) && is_string($decoded['responseData']['translatedText']) && trim($decoded['responseData']['translatedText']) !== '') {
-                $translated = trim($decoded['responseData']['translatedText']);
-                break;
-            }
-
-            if (isset($decoded[0]) && is_array($decoded[0])) {
-                $parts = [];
-                foreach ($decoded[0] as $part) {
-                    if (isset($part[0]) && is_string($part[0])) {
-                        $parts[] = $part[0];
-                    }
-                }
-                $combined = trim(implode('', $parts));
-                if ($combined !== '') {
-                    $translated = $combined;
-                    break;
-                }
-            }
+        $chunksByText[$textIndex] = [];
+        foreach ($chunks as $chunk) {
+            $chunksByText[$textIndex][] = count($allChunks);
+            $allChunks[] = $chunk;
         }
-
-        $translatedParts[] = $translated !== null ? $translated : $chunk;
     }
 
-    return trim(implode(' ', $translatedParts));
+    if ($allChunks === []) {
+        return $trimmedTexts;
+    }
+    if (libreTranslateEndpoint() === '') {
+        $GLOBALS['export_translation_unavailable'] = true;
+        return $trimmedTexts;
+    }
+
+    $translatedChunks = [];
+    foreach (array_chunk($allChunks, 10) as $batch) {
+        $translations = translateLibreTranslateBatch($batch);
+        if ($translations === null) {
+            $GLOBALS['export_translation_unavailable'] = true;
+            $translations = $batch;
+        }
+        array_push($translatedChunks, ...$translations);
+    }
+
+    $translatedTexts = [];
+    foreach ($chunksByText as $textIndex => $chunkIndexes) {
+        $parts = array_map(static fn (int $chunkIndex): string => $translatedChunks[$chunkIndex], $chunkIndexes);
+        $translatedTexts[$textIndex] = trim(implode(' ', $parts));
+    }
+
+    return $translatedTexts;
 }
 
-function exportRowForDisplay(array $item): array
+function translateExportContent(string $text): string
 {
-    // Only the free-form content fields are translated for export.
-    // Model identifiers stay as-is, because they are technical labels and not natural-language text.
+    return translateExportContents([$text])[0] ?? '';
+}
+
+function exportRowForDisplay(array $item, ?array $translatedContent = null): array
+{
+    static $englishCatalogue = null;
+    $englishCatalogue ??= require dirname(__DIR__) . '/languages/en.php';
+    $version = displayLeapOsVersion($item['leapos_version'] ?? null);
+    $category = trim((string) ($item['category'] ?? ''));
+    $classification = trim((string) ($item['classification'] ?? ''));
+
     return [
         'number' => (string) ($item['number'] ?? ''),
-        'topic' => translateExportContent((string) ($item['topic'] ?? '')),
+        'topic' => $translatedContent[0] ?? translateExportContent((string) ($item['topic'] ?? '')),
         'model' => ($item['model'] ?? '') === '' || ($item['model'] ?? '') === ALL_MODELS ? 'all' : (string) $item['model'],
-        'suggestion' => translateExportContent((string) ($item['suggestion'] ?? '')),
+        'leapos_version' => in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? $englishCatalogue['version.all'] : $version,
+        'category' => $category === '' ? 'Not specified' : ($englishCatalogue['value.' . $category] ?? 'Not specified'),
+        'classification' => $classification === '' ? 'Not specified' : ($englishCatalogue['value.' . $classification] ?? 'Not specified'),
+        'suggestion' => $translatedContent[1] ?? translateExportContent((string) ($item['suggestion'] ?? '')),
     ];
+}
+
+function exportRowsForDisplay(array $items): array
+{
+    $freeText = [];
+    foreach ($items as $item) {
+        $freeText[] = (string) ($item['topic'] ?? '');
+        $freeText[] = (string) ($item['suggestion'] ?? '');
+    }
+    $translatedText = translateExportContents($freeText);
+
+    $displayRows = [];
+    foreach ($items as $index => $item) {
+        $displayRows[] = ['id' => $item['id'] ?? ''] + exportRowForDisplay($item, [
+            $translatedText[$index * 2] ?? '',
+            $translatedText[$index * 2 + 1] ?? '',
+        ]);
+    }
+
+    return $displayRows;
 }
 
 function selectedReviewedSuggestions(array $suggestions): array
@@ -162,10 +233,10 @@ function selectedReviewedSuggestions(array $suggestions): array
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['csv', 'excel'], true)) {
     $items = selectedReviewedSuggestions(loadSuggestions());
-    $rows = [['number', 'topic', 'model', 'suggestion']];
-    foreach ($items as $item) {
-        $translated = exportRowForDisplay($item);
-        $rows[] = [$translated['number'], $translated['topic'], $translated['model'], $translated['suggestion']];
+    $displayItems = exportRowsForDisplay($items);
+    $rows = [['number', 'topic', 'model', 'leapos_version', 'category', 'classification', 'suggestion']];
+    foreach ($displayItems as $translated) {
+        $rows[] = [$translated['number'], $translated['topic'], $translated['model'], $translated['leapos_version'], $translated['category'], $translated['classification'], $translated['suggestion']];
     }
     if ($_POST['action'] === 'csv') {
         header('Content-Type: text/csv; charset=UTF-8');
@@ -173,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
         echo "\xEF\xBB\xBF";
         $output = fopen('php://output', 'wb');
         foreach ($rows as $row) {
-            fputcsv($output, $row, ';');
+            fputcsv($output, $row, ';', '"', '');
         }
         fclose($output);
         exit;
@@ -190,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
         }
         $columnWidths[$columnIndex] = min(max($longestLine + 2, 10), 60);
     }
-    $columnWidths[3] = min($columnWidths[3], 54);
+    $columnWidths[6] = min($columnWidths[6], 54);
 
     $xml = new XMLWriter();
     $xml->openMemory();
@@ -217,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
             $xml->startElement('c');
             $xml->writeAttribute('r', $column . ($rowIndex + 1));
             $xml->writeAttribute('t', 'inlineStr');
-            $xml->writeAttribute('s', $cellIndex === 3 ? '2' : '1');
+            $xml->writeAttribute('s', $cellIndex === 6 ? '2' : '1');
             $xml->startElement('is');
             $xml->writeElement('t', (string) $cell);
             $xml->endElement();
@@ -319,15 +390,18 @@ XML
 }
 
 $items = array_values(array_filter(loadSuggestions(), static fn (array $item): bool => ($item['status'] ?? '') === 'geprüft'));
+$GLOBALS['export_translation_unavailable'] = libreTranslateEndpoint() === '';
+$displayItems = exportRowsForDisplay($items);
 ?>
 <!DOCTYPE html>
-<html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Geprüfte Vorschläge exportieren</title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"><style>.export-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.export-actions label{min-width:180px}.export-actions select{background:#fff}.select-all{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.86rem;font-weight:700}.select-all input,.check-cell input{width:18px;height:18px}.export-note{margin:0 0 20px;color:var(--muted)}.export-heading{white-space:nowrap;font-size:clamp(2rem,4.4vw,4rem)}.export-links{display:flex;gap:32px;flex-wrap:wrap}.export-links .admin-link{margin:0}.export-table-section thead th{top:0}@media(max-width:700px){.export-actions{align-items:stretch;flex-direction:column}.export-actions button{width:100%}.export-heading{font-size:2rem}}</style></head>
+<html lang="<?= e(currentLanguage()) ?>">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= e(t('export.title')) ?></title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"><style>.export-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.export-actions label{min-width:180px}.export-actions select{background:#fff}.select-all{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.86rem;font-weight:700}.select-all input,.check-cell input{width:18px;height:18px}.export-note{margin:0 0 20px;color:var(--muted)}.export-heading{white-space:nowrap;font-size:clamp(2rem,4.4vw,4rem)}.export-links{display:flex;gap:32px;flex-wrap:wrap}.export-links .admin-link{margin:0}.export-table-section thead th{top:0}@media(max-width:700px){.export-actions{align-items:stretch;flex-direction:column}.export-actions button{width:100%}.export-heading{font-size:1.4rem}}</style></head>
 <body><main class="page-shell">
-    <header class="page-header"><div><p class="eyebrow">Geschützter Export</p><h1 class="export-heading">Geprüfte Vorschläge</h1><p class="intro">Deutsche Vorschläge werden für die externe Verwendung ins Englische übersetzt.</p></div><div class="area-links"><a class="admin-link" href="../admin/">Vorschläge bearbeiten</a><a class="admin-link" href="../">Erfassung</a></div></header>
-    <section class="admin-panel"><p class="export-note">Einzelne Einträge oder alle geprüften Einträge auswählen und anschließend ein Exportformat wählen.</p><form class="export-actions" method="post"><label class="select-all"><input id="select-all" type="checkbox"> Alle auswählen</label><button class="small-button" name="action" value="csv" type="submit">CSV exportieren</button><button class="small-button" name="action" value="excel" type="submit">Excel exportieren</button>
+    <header class="page-header"><div><p class="eyebrow"><?= e(t('export.protected')) ?></p><h1 class="export-heading"><?= e(t('export.title')) ?></h1><p class="intro"><?= e(t('export.intro')) ?></p></div><div class="area-links"><a class="admin-link" href="../admin/"><?= e(t('export.edit_link')) ?></a><a class="admin-link" href="../"><?= e(t('export.intake_link')) ?></a><?= renderLanguageSelector() ?></div></header>
+    <?php if ($GLOBALS['export_translation_unavailable']): ?><p class="message error"><?= e(t('export.translation_unavailable')) ?></p><?php endif; ?>
+    <section class="admin-panel"><p class="export-note"><?= e(t('export.note')) ?></p><form class="export-actions" method="post"><label class="select-all"><input id="select-all" type="checkbox"> <?= e(t('export.select_all')) ?></label><button class="small-button" name="action" value="csv" type="submit"><?= e(t('export.csv')) ?></button><button class="small-button" name="action" value="excel" type="submit"><?= e(t('export.excel')) ?></button>
   <?php foreach ($items as $item): ?><input class="export-id" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" hidden><?php endforeach; ?></form></section>
-    <section class="table-section export-table-section"><div class="section-heading"><div><p class="eyebrow">Übersicht</p><h2>Englische Übersetzung</h2></div><span class="count-badge"><?= count($items) ?> Einträge</span></div><div class="table-wrap"><table><thead><tr><th>selection</th><th>number</th><th>topic</th><th>model</th><th>suggestion</th></tr></thead><tbody>
-    <?php if ($items === []): ?><tr><td class="empty-state" colspan="5">Keine geprüften Vorschläge vorhanden.</td></tr><?php else: foreach ($items as $item): $translated = exportRowForDisplay($item); ?><tr><td class="check-cell"><input class="row-select" type="checkbox" value="<?= e($item['id'] ?? '') ?>" aria-label="Eintrag auswählen"></td><td data-label="number"><?= e($translated['number']) ?></td><td data-label="topic"><?= e($translated['topic']) ?></td><td data-label="model"><span class="model-tag"><?= e($translated['model']) ?></span></td><td data-label="suggestion" class="suggestion-cell"><?= nl2br(e($translated['suggestion'])) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
+    <section class="table-section export-table-section"><div class="section-heading"><div><p class="eyebrow"><?= e(t('overview')) ?></p><h2><?= e(t('export.translation')) ?></h2></div><span class="count-badge"><?= count($items) ?> <?= e(t(count($items) === 1 ? 'entry' : 'entries')) ?></span></div><div class="table-wrap"><table><thead><tr><th><?= e(t('table.selection')) ?></th><th><?= e(t('table.number')) ?></th><th><?= e(t('table.topic')) ?></th><th><?= e(t('field.model')) ?></th><th><?= e(t('field.version')) ?></th><th><?= e(t('field.category')) ?></th><th><?= e(t('field.classification')) ?></th><th><?= e(t('table.suggestion')) ?></th></tr></thead><tbody>
+    <?php if ($items === []): ?><tr><td class="empty-state" colspan="8"><?= e(t('export.empty')) ?></td></tr><?php else: foreach ($displayItems as $translated): ?><tr><td class="check-cell"><input class="row-select" type="checkbox" value="<?= e($translated['id']) ?>" aria-label="<?= e(t('export.select_row')) ?>"></td><td data-label="<?= e(t('table.number')) ?>"><?= e($translated['number']) ?></td><td data-label="<?= e(t('table.topic')) ?>"><?= e($translated['topic']) ?></td><td data-label="<?= e(t('field.model')) ?>"><span class="model-tag"><?= e($translated['model']) ?></span></td><td data-label="<?= e(t('field.version')) ?>"><?= e($translated['leapos_version']) ?></td><td data-label="<?= e(t('field.category')) ?>"><?= e($translated['category']) ?></td><td data-label="<?= e(t('field.classification')) ?>"><?= e($translated['classification']) ?></td><td data-label="<?= e(t('table.suggestion')) ?>" class="suggestion-cell"><?= nl2br(e($translated['suggestion'])) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
   <script>const all=document.getElementById('select-all');const rows=[...document.querySelectorAll('.row-select')];const hidden=[...document.querySelectorAll('.export-id')];function sync(){rows.forEach((row,i)=>{hidden[i].checked=row.checked});all.checked=rows.length>0&&rows.every(row=>row.checked)}rows.forEach(row=>row.addEventListener('change',sync));all.addEventListener('change',()=>{rows.forEach(row=>row.checked=all.checked);sync()});</script>
 </main></body></html>

@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
     header('Location: ' . strtok($_SERVER['REQUEST_URI'] ?? 'index.php', '?'));
     exit;
   }
-  $error = 'Das Passwort ist nicht korrekt.';
+  $error = t('login.error');
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'logout') {
   $_SESSION = [];
   session_destroy();
@@ -47,11 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
 if (!$authenticated) {
   ?>
   <!DOCTYPE html>
-  <html lang="de">
-  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin-Anmeldung</title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
-  <body><main class="page-shell"><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow">Geschützter Bereich</p><h1 style="font-size: 2.5rem;">Bearbeitung</h1><p class="intro">Bitte Passwort eingeben, um die Vorschläge zu bearbeiten.</p>
+  <html lang="<?= e(currentLanguage()) ?>">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= e(t('admin.login.title')) ?></title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
+  <body><main class="page-shell"><?= renderLanguageSelector(true) ?><section class="form-panel" style="max-width: 520px; margin: 10vh auto 0;"><p class="eyebrow"><?= e(t('admin.area')) ?></p><h1 style="font-size: 2.5rem;"><?= e(t('admin.link')) ?></h1><p class="intro"><?= e(t('admin.login.intro')) ?></p>
   <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
-  <form method="post"><input type="hidden" name="action" value="login"><label for="password">Passwort<input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit">Anmelden</button></form>
+  <form method="post"><input type="hidden" name="action" value="login"><label for="password"><?= e(t('field.password')) ?><input id="password" name="password" type="password" autocomplete="current-password" required autofocus></label><button class="primary-button" type="submit"><?= e(t('login.submit')) ?></button></form>
   </section></main></body></html>
   <?php
   exit;
@@ -66,11 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
       if ($ids === []) {
-        $error = 'Bitte mindestens eine Zeile auswählen.';
+        $error = t('admin.selection.required');
       } else {
         $suggestions = array_values(array_filter($suggestions, static fn (array $item): bool => !in_array($item['id'] ?? '', $ids, true)));
         $changed = true;
-        $notice = 'Die ausgewählten Einträge wurden gelöscht.';
+        $notice = t('admin.notice.deleted');
       }
     } elseif ($action === 'edit') {
         $id = cleanText($_POST['id'] ?? '', 32);
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $suggestion = cleanText($_POST['suggestion'] ?? '', 10000);
         $status = cleanText($_POST['status'] ?? '', 30);
         if ($topic === '' || !isValidModel($model) || !isValidLeapOsVersion($leaposVersion) || !in_array($category, CATEGORIES, true) || !in_array($classification, CLASSIFICATIONS, true) || $suggestion === '' || !in_array($status, STATUSES, true)) {
-          $error = 'Bitte alle Felder mit gültigen Werten ausfüllen.';
+          $error = t('admin.error.fields');
         } else {
             foreach ($suggestions as &$item) {
                 if (($item['id'] ?? '') === $id) {
@@ -100,12 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             unset($item);
-            $notice = 'Der Eintrag wurde geändert.';
+            $notice = t('admin.notice.edited');
         }
     } elseif ($action === 'bulk_status') {
         $status = cleanText($_POST['status'] ?? '', 30);
       if ($ids === [] || !in_array($status, STATUSES, true)) {
-            $error = 'Bitte einen gültigen Status auswählen.';
+            $error = t('admin.error.status');
         } else {
             foreach ($suggestions as &$item) {
                 if (in_array($item['id'] ?? '', $ids, true)) {
@@ -114,12 +114,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             unset($item);
-            $notice = $changed ? 'Die ausgewählten Status wurden geändert.' : 'Keine Einträge ausgewählt.';
+            $notice = $changed ? t('admin.notice.status_changed') : t('admin.notice.none_selected');
         }
     }
 
     if ($changed && !saveSuggestions($suggestions)) {
-        $error = 'Die Änderungen konnten nicht gespeichert werden. Bitte die Schreibrechte prüfen.';
+        $error = t('admin.error.save');
         $notice = null;
     }
 }
@@ -128,24 +128,24 @@ $suggestions = loadSuggestions();
 $availableLeapOsVersions = availableLeapOsVersions($suggestions);
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= e(currentLanguage()) ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vorschläge bearbeiten</title>
+  <title><?= e(t('admin.title')) ?></title>
   <link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>">
   <style>
     .admin-panel { margin-bottom: 34px; padding: 22px; background: #e8f2ef; border: 1px solid #c6dfd9; }
     .page-title-nowrap { white-space: nowrap; font-size: clamp(2rem, 4.4vw, 4rem); }.admin-actions { display: grid; gap: 18px; }.edit-fields { display: grid; grid-template-columns: 1fr .75fr .9fr .9fr .9fr 2fr; gap: 14px; }.edit-fields label { min-width: 0; }.edit-suggestion { min-width: 0; }.edit-fields input, .edit-fields select, .edit-fields textarea { padding: 10px 12px; }.edit-fields textarea { min-height: 44px; resize: vertical; }.action-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }.action-row label { min-width: 180px; }.action-row .select-all { min-width: auto; flex-direction: row; align-items: center; gap: 8px; }.action-row .select-all input { width: 18px; height: 18px; }.action-row select { background: #fff; }.small-button { padding: 10px 14px; color: #fff; background: var(--teal); }.small-button:disabled { cursor: not-allowed; opacity: .45; }.danger-button { color: var(--red); border: 1px solid #e6b5b0; background: #fff; }.secondary-button { color: var(--ink); background: #dce4e5; }.selection-help { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }.check-cell { text-align: center; }.check-cell input { min-width: auto; width: 18px; height: 18px; }.admin-table td { vertical-align: top; }
     @media (max-width: 800px) { .edit-fields { grid-template-columns: 1fr; }.edit-suggestion { grid-column: auto; } }
-    @media (max-width: 700px) { .admin-table td { display: block; }.admin-table td::before { display: block; }.check-cell { display: block; }.action-row { align-items: stretch; flex-direction: column; }.action-row label, .action-row button { width: 100%; } }
+    @media (max-width: 700px) { .page-title-nowrap { font-size: 1.4rem; }.admin-table td { display: block; }.admin-table td::before { display: block; }.check-cell { display: block; }.action-row { align-items: stretch; flex-direction: column; }.action-row label, .action-row button { width: 100%; } }
   </style>
 </head>
 <body>
   <main class="page-shell">
     <header class="page-header">
-      <div><p class="eyebrow">Geschützter Bereich</p><h1 class="page-title-nowrap">Vorschläge bearbeiten</h1><p class="intro">Einträge prüfen, weiterleiten und ihren Status aktuell halten.</p></div>
-      <div class="area-links"><a class="admin-link" href="../">Zur öffentlichen Ansicht</a><a class="admin-link" href="../export/">Export</a></div>
+      <div><p class="eyebrow"><?= e(t('admin.area')) ?></p><h1 class="page-title-nowrap"><?= e(t('admin.title')) ?></h1><p class="intro"><?= e(t('admin.intro')) ?></p></div>
+      <div class="area-links"><a class="admin-link" href="../"><?= e(t('public.link')) ?></a><a class="admin-link" href="../export/"><?= e(t('export.link')) ?></a><?= renderLanguageSelector() ?></div>
     </header>
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
@@ -154,58 +154,59 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       <form id="selection-form" class="admin-actions" method="post">
         <input id="selected-id" type="hidden" name="id" value="">
         <div class="edit-fields">
-          <label for="edit-topic">Thema<input id="edit-topic" name="topic" type="text" maxlength="256" disabled></label>
-          <label for="edit-model">Modell<select id="edit-model" name="model" disabled><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+          <label for="edit-topic"><?= e(t('field.topic')) ?><input id="edit-topic" name="topic" type="text" maxlength="256" disabled></label>
+          <label for="edit-model"><?= e(t('field.model')) ?><select id="edit-model" name="model" disabled><option value="<?= e(ALL_MODELS) ?>"><?= e(t('model.all')) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
           <div class="edit-version-fields">
-            <label for="edit-leapos-version">LeapOS-Version<select id="edit-leapos-version" name="leapos_version" disabled><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?><option value="<?= e(ADD_LEAPOS_VERSION) ?>">Version hinzufügen …</option></select></label>
-            <label class="version-custom-field" id="edit-version-custom-field" for="edit-leapos-version-custom" hidden><span>Neue Versionsnummer <span>*</span></span><input id="edit-leapos-version-custom" name="leapos_version_custom" type="text" maxlength="30" pattern="[0-9]+(\.[0-9]+)*" disabled></label>
+            <label for="edit-leapos-version"><?= e(t('field.version')) ?><select id="edit-leapos-version" name="leapos_version" disabled><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"><?= e(t('version.all')) ?></option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?><option value="<?= e(ADD_LEAPOS_VERSION) ?>"><?= e(t('version.add')) ?></option></select></label>
+            <label class="version-custom-field" id="edit-version-custom-field" for="edit-leapos-version-custom" hidden><span><?= e(t('version.new')) ?> <span>*</span></span><input id="edit-leapos-version-custom" name="leapos_version_custom" type="text" maxlength="30" pattern="[0-9]+(\.[0-9]+)*" disabled></label>
           </div>
-          <label for="edit-category">Kategorie<select id="edit-category" name="category" disabled><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?></select></label>
-          <label for="edit-classification">Einordnung<select id="edit-classification" name="classification" disabled><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?></select></label>
-          <label class="edit-suggestion" for="edit-suggestion">Vorschlag<textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
+          <label for="edit-category"><?= e(t('field.category')) ?><select id="edit-category" name="category" disabled><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e(t('value.' . $category)) ?></option><?php endforeach; ?></select></label>
+          <label for="edit-classification"><?= e(t('field.classification')) ?><select id="edit-classification" name="classification" disabled><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e(t('value.' . $classification)) ?></option><?php endforeach; ?></select></label>
+          <label class="edit-suggestion" for="edit-suggestion"><?= e(t('field.suggestion')) ?><textarea id="edit-suggestion" name="suggestion" rows="2" disabled></textarea></label>
         </div>
         <div class="action-row">
-          <label class="select-all"><input id="select-all" type="checkbox"> Alle auswählen</label>
-          <label for="bulk-status">Status ändern<select id="bulk-status" name="status"><option value="">Bitte auswählen</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
-          <button class="small-button" name="action" value="bulk_status" type="submit">Status ändern</button>
-          <button class="small-button" name="action" value="edit" type="submit" disabled id="save-button">Änderungen speichern</button>
-          <button class="small-button danger-button" name="action" value="delete" type="submit" onclick="return confirm('Die ausgewählten Einträge wirklich löschen?');">Löschen</button>
-          <button class="small-button secondary-button" name="action" value="logout" type="submit">Abmelden</button>
+          <label class="select-all"><input id="select-all" type="checkbox"> <?= e(t('admin.select_all')) ?></label>
+          <label for="bulk-status"><?= e(t('admin.field.status')) ?><select id="bulk-status" name="status"><option value=""><?= e(t('admin.status.prompt')) ?></option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e(t('value.' . $status)) ?></option><?php endforeach; ?></select></label>
+          <button class="small-button" name="action" value="bulk_status" type="submit"><?= e(t('admin.status.submit')) ?></button>
+          <button class="small-button" name="action" value="edit" type="submit" disabled id="save-button"><?= e(t('admin.save')) ?></button>
+          <button class="small-button danger-button" name="action" value="delete" type="submit" onclick="return confirm(<?= e(json_encode(t('admin.delete.confirm'))) ?>);">
+            <?= e(t('admin.delete')) ?></button>
+          <button class="small-button secondary-button" name="action" value="logout" type="submit"><?= e(t('admin.logout')) ?></button>
         </div>
       </form>
-      <p id="selection-help" class="selection-help">Bitte eine Zeile auswählen.</p>
+      <p id="selection-help" class="selection-help"><?= e(t('admin.selection.none')) ?></p>
     </section>
 
     <section class="table-section admin-table-section">
-      <div class="section-heading"><div><p class="eyebrow">Verwaltung</p><h2><?= count($suggestions) ?> Einträge</h2></div></div>
-      <div class="table-filters" data-table-filters aria-label="Tabellenfilter">
-        <label class="table-filter-search">Freitext<input type="search" data-filter-search placeholder="Thema oder Vorschlag"></label>
-        <label>Von<input type="date" data-filter-from></label>
-        <label>Bis<input type="date" data-filter-to></label>
-        <label>Status<select data-filter-status><option value="">Alle Status</option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e($status) ?></option><?php endforeach; ?></select></label>
-        <label>Kategorie<select data-filter-category><option value="">Alle Kategorien</option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e($category) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
-        <label>Einordnung<select data-filter-classification><option value="">Alle Einordnungen</option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e($classification) ?></option><?php endforeach; ?><option value="__missing__">Nicht angegeben</option></select></label>
-        <label>Modell<select data-filter-model><option value="">Alle Modelle</option><option value="__missing__">Nicht angegeben</option><option value="<?= e(ALL_MODELS) ?>"><?= e(ALL_MODELS) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
-        <label>Version<select data-filter-version><option value="">Alle Versionen</option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>">alle</option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
-        <button class="filter-reset" type="button" data-filter-reset>Zurücksetzen</button>
+      <div class="section-heading"><div><p class="eyebrow"><?= e(t('admin.title.count')) ?></p><h2><?= count($suggestions) ?> <?= e(t(count($suggestions) === 1 ? 'entry' : 'entries')) ?></h2></div></div>
+      <div class="table-filters" data-table-filters aria-label="<?= e(t('overview')) ?>">
+        <label class="table-filter-search"><?= e(t('filter.search')) ?><input type="search" data-filter-search placeholder="<?= e(t('filter.search.placeholder')) ?>"></label>
+        <label><?= e(t('filter.from')) ?><input type="date" data-filter-from></label>
+        <label><?= e(t('filter.to')) ?><input type="date" data-filter-to></label>
+        <label><?= e(t('filter.status')) ?><select data-filter-status><option value=""><?= e(t('filter.all_statuses')) ?></option><?php foreach (STATUSES as $status): ?><option value="<?= e($status) ?>"><?= e(t('value.' . $status)) ?></option><?php endforeach; ?></select></label>
+        <label><?= e(t('filter.category')) ?><select data-filter-category><option value=""><?= e(t('filter.all_categories')) ?></option><?php foreach (CATEGORIES as $category): ?><option value="<?= e($category) ?>"><?= e(t('value.' . $category)) ?></option><?php endforeach; ?><option value="__missing__"><?= e(t('filter.missing')) ?></option></select></label>
+        <label><?= e(t('filter.classification')) ?><select data-filter-classification><option value=""><?= e(t('filter.all_classifications')) ?></option><?php foreach (CLASSIFICATIONS as $classification): ?><option value="<?= e($classification) ?>"><?= e(t('value.' . $classification)) ?></option><?php endforeach; ?><option value="__missing__"><?= e(t('filter.missing')) ?></option></select></label>
+        <label><?= e(t('filter.model')) ?><select data-filter-model><option value=""><?= e(t('filter.all_models')) ?></option><option value="__missing__"><?= e(t('filter.missing')) ?></option><option value="<?= e(ALL_MODELS) ?>"><?= e(t('model.all')) ?></option><?php foreach (MODELS as $model): ?><option value="<?= e($model) ?>"><?= e($model) ?></option><?php endforeach; ?></select></label>
+        <label><?= e(t('filter.version')) ?><select data-filter-version><option value=""><?= e(t('filter.all_versions')) ?></option><option value="<?= e(UNKNOWN_LEAPOS_VERSION) ?>"><?= e(t('version.all')) ?></option><option value="---">---</option><?php foreach ($availableLeapOsVersions as $version): ?><option value="<?= e($version) ?>"><?= e($version) ?></option><?php endforeach; ?></select></label>
+        <button class="filter-reset" type="button" data-filter-reset><?= e(t('filter.reset')) ?></button>
       </div>
       <div class="table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Auswahl</th><th>Nr.</th><th>Erfasst am</th><th>Status</th><th>Thema</th><th>Modell / LeapOS</th><th>Vorschlag</th></tr></thead>
+          <thead><tr><th><?= e(t('table.selection')) ?></th><th><?= e(t('table.number')) ?></th><th><?= e(t('table.created')) ?></th><th><?= e(t('filter.status')) ?></th><th><?= e(t('table.topic')) ?></th><th><?= e(t('table.model_version')) ?></th><th><?= e(t('table.suggestion')) ?></th></tr></thead>
           <tbody>
-          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7">Noch keine Vorschläge erfasst.</td></tr>
+          <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7"><?= e(t('table.empty')) ?></td></tr>
           <?php else: foreach ($suggestions as $item): ?>
             <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e($item['topic'] ?? '') ?>" data-filter-suggestion="<?= e($item['suggestion'] ?? '') ?>">
-              <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-leapos-version="<?= e($item['leapos_version'] ?? UNKNOWN_LEAPOS_VERSION) ?>" data-category="<?= e($item['category'] ?? 'Sonstige') ?>" data-classification="<?= e($item['classification'] ?? 'Vorschlag') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="Eintrag auswählen"></td>
-              <td data-label="Nr."><?= e($item['number'] ?? '') ?></td>
-              <td data-label="Erfasst am"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
+              <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e($item['topic'] ?? '') ?>" data-model="<?= e($item['model'] ?? '') ?>" data-leapos-version="<?= e($item['leapos_version'] ?? UNKNOWN_LEAPOS_VERSION) ?>" data-category="<?= e($item['category'] ?? 'Sonstige') ?>" data-classification="<?= e($item['classification'] ?? 'Vorschlag') ?>" data-suggestion="<?= e($item['suggestion'] ?? '') ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="<?= e(t('table.selection')) ?>"></td>
+              <td data-label="<?= e(t('table.number')) ?>"><?= e($item['number'] ?? '') ?></td>
+              <td data-label="<?= e(t('table.created')) ?>"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
-              <td data-label="Thema"><?= e($item['topic'] ?? '') ?></td>
-              <td data-label="Modell / LeapOS"><div class="model-version-tags"><span class="model-tag"><?= e($item['model'] ?? '---') ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
-              <td data-label="Vorschlag" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
+              <td data-label="<?= e(t('table.topic')) ?>" data-field="topic"><?= e($item['topic'] ?? '') ?></td>
+              <td data-label="<?= e(t('table.model_version')) ?>"><div class="model-version-tags"><span class="model-tag"><?= e(($item['model'] ?? '') === ALL_MODELS ? t('model.all') : ($item['model'] ?? '---')) ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null) === UNKNOWN_LEAPOS_VERSION ? t('version.all') : displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
+              <td data-label="<?= e(t('table.suggestion')) ?>" data-field="suggestion" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
             </tr>
           <?php endforeach; endif; ?>
-          <tr data-filter-empty hidden><td class="empty-state" colspan="7">Keine passenden Einträge gefunden.</td></tr>
+          <tr data-filter-empty hidden><td class="empty-state" colspan="7"><?= e(t('table.no_matches')) ?></td></tr>
           </tbody>
         </table>
       </div>
@@ -226,6 +227,13 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
     const saveButton = document.getElementById('save-button');
     const selectionHelp = document.getElementById('selection-help');
     const selectAll = document.getElementById('select-all');
+    const selectionMessages = {
+      none: <?= json_encode(t('admin.selection.none'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+      single: <?= json_encode(t('admin.selection.single'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+      multiple: <?= json_encode(t('admin.selection.multiple'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+      required: <?= json_encode(t('admin.selection.required'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+      singleRequired: <?= json_encode(t('admin.selection.single_required'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+    };
     function updateSelection() {
       const selected = checkboxes.filter((checkbox) => checkbox.checked);
       const single = selected.length === 1 ? selected[0] : null;
@@ -255,7 +263,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       saveButton.disabled = !single;
       selectAll.checked = visibleCheckboxes.length > 0 && visibleSelectedCount === visibleCheckboxes.length;
       selectAll.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleCheckboxes.length;
-      selectionHelp.textContent = selected.length === 0 ? 'Bitte eine Zeile auswählen.' : (single ? 'Eine Zeile ausgewählt: Felder können bearbeitet werden.' : selected.length + ' Zeilen ausgewählt: Status ändern oder löschen ist möglich.');
+      selectionHelp.textContent = selected.length === 0 ? selectionMessages.none : (single ? selectionMessages.single : selected.length + ' ' + selectionMessages.multiple);
     }
     checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
     leaposVersion.addEventListener('change', () => {
@@ -275,11 +283,11 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       const selected = checkboxes.filter((checkbox) => checkbox.checked);
       if (selected.length === 0 && event.submitter?.value !== 'logout') {
         event.preventDefault();
-        selectionHelp.textContent = 'Bitte mindestens eine Zeile auswählen.';
+        selectionHelp.textContent = selectionMessages.required;
       }
       if (event.submitter?.value === 'edit' && selected.length !== 1) {
         event.preventDefault();
-        selectionHelp.textContent = 'Zum Speichern genau eine Zeile auswählen.';
+        selectionHelp.textContent = selectionMessages.singleRequired;
       }
     });
     document.querySelectorAll('[data-table-filters]').forEach((panel) => {
@@ -290,6 +298,14 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       const dateFrom = field('from');
       const dateTo = field('to');
       const search = field('search');
+      const filterControls = [...panel.querySelectorAll('input, select')];
+      const filterStorageKey = `sfi-leapos-admin-filters:${window.location.pathname}`;
+      try {
+        const savedFilters = JSON.parse(sessionStorage.getItem(filterStorageKey) ?? '[]');
+        filterControls.forEach((control, index) => {
+          if (typeof savedFilters[index] === 'string') control.value = savedFilters[index];
+        });
+      } catch {}
       const selectFields = ['status', 'category', 'classification', 'model', 'version'].map((name) => ({
         control: field(name),
         dataKey: `filter${name[0].toUpperCase()}${name.slice(1)}`,
@@ -343,8 +359,8 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
           const matchesDate = (!dateFrom.value || rowDate >= dateFrom.value) && (!dateTo.value || rowDate <= dateTo.value);
           const matchesSelects = selectFields.every(({ control, dataKey }) => matchesFilter(control.value, row.dataset[dataKey]));
           const visible = matchesDate && matchesSelects && (!searchValue || rowText.includes(searchValue));
-          highlightText(row.querySelector('[data-label="Thema"]'), searchValue);
-          highlightText(row.querySelector('[data-label="Vorschlag"]'), searchValue);
+          highlightText(row.querySelector('[data-field="topic"]'), searchValue);
+          highlightText(row.querySelector('[data-field="suggestion"]'), searchValue);
           row.hidden = !visible;
           const checkbox = row.querySelector('input[name="ids[]"]');
           if (!visible && checkbox) checkbox.checked = false;
@@ -355,12 +371,21 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       }
 
       panel.querySelectorAll('input, select').forEach((control) => {
-        control.addEventListener('input', applyFilters);
-        control.addEventListener('change', applyFilters);
+        const updateFilters = () => {
+          applyFilters();
+          try {
+            sessionStorage.setItem(filterStorageKey, JSON.stringify(filterControls.map((filterControl) => filterControl.value)));
+          } catch {}
+        };
+        control.addEventListener('input', updateFilters);
+        control.addEventListener('change', updateFilters);
       });
       panel.querySelector('[data-filter-reset]').addEventListener('click', () => {
         panel.querySelectorAll('input, select').forEach((control) => { control.value = ''; });
         applyFilters();
+        try {
+          sessionStorage.removeItem(filterStorageKey);
+        } catch {}
       });
       applyFilters();
     });

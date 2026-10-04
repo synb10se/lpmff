@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 const SUGGESTION_FILE = __DIR__ . '/data/suggestions.json';
+const SUPPORTED_LANGUAGES = ['de', 'en'];
+const LIBRETRANSLATE_DEFAULT_URL = 'http://killerminion.ddns.berlin:4712/translate';
 const MODELS = ['B03X', 'B05', 'B10', 'C10', 'T03'];
 const ALL_MODELS = 'alle';
 const LEAPOS_VERSIONS = ['4.31.22'];
@@ -11,6 +13,50 @@ const ADD_LEAPOS_VERSION = '__add_leapos_version__';
 const CATEGORIES = ['App', 'Assistenzsysteme', 'Fahrverhalten', 'Infotainment', 'Laden', 'Sonstige'];
 const CLASSIFICATIONS = ['Einschränkung', 'Fehler', 'Vorschlag'];
 const STATUSES = ['erfasst', 'geprüft', 'versendet', 'abgelehnt', 'bestätigt', 'angekündigt', 'verfügbar'];
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+$requestedLanguage = strtolower(cleanText($_GET['lang'] ?? '', 2));
+if (in_array($requestedLanguage, SUPPORTED_LANGUAGES, true)) {
+    $_SESSION['ui_language'] = $requestedLanguage;
+}
+
+function currentLanguage(): string
+{
+    $language = $_SESSION['ui_language'] ?? 'de';
+    return in_array($language, SUPPORTED_LANGUAGES, true) ? $language : 'de';
+}
+
+function libreTranslateEndpoint(): string
+{
+    return trim((string) (getenv('LIBRETRANSLATE_URL') ?: LIBRETRANSLATE_DEFAULT_URL));
+}
+
+function t(string $key): string
+{
+    static $catalogues = [];
+    $language = currentLanguage();
+    if (!isset($catalogues[$language])) {
+        $catalogues[$language] = require __DIR__ . '/languages/' . $language . '.php';
+    }
+
+    return $catalogues[$language][$key] ?? $key;
+}
+
+function renderLanguageSelector(bool $floating = false): string
+{
+    $path = $_SERVER['PHP_SELF'] ?? '/';
+    $class = $floating ? 'language-selector language-selector-floating' : 'language-selector';
+    $selector = '<form class="' . $class . '" method="get" action="' . e($path) . '">'
+        . '<label for="ui-language">' . e(t('Language')) . '</label>'
+        . '<select id="ui-language" name="lang" aria-label="' . e(t('Language')) . '" onchange="this.form.submit()">';
+    foreach (SUPPORTED_LANGUAGES as $language) {
+        $selector .= '<option value="' . e($language) . '"' . (currentLanguage() === $language ? ' selected' : '') . '>' . e(strtoupper($language)) . '</option>';
+    }
+
+    return $selector . '</select></form>';
+}
 
 function isValidModel(string $model): bool
 {
@@ -102,7 +148,7 @@ function renderSymbol(string $type, string $value): string
         ],
     ];
     $knownValue = isset($labels[$type][$value]);
-    $label = $labels[$type][$value] ?? $value;
+    $label = isset($labels[$type][$value]) ? t('value.' . $value) : $value;
     $path = $icons[$type][$value] ?? '<circle cx="12" cy="12" r="8"/><path d="m7 17 10-10"/>';
     $iconClass = $knownValue ? 'symbol-icon' : 'symbol-icon symbol-icon-missing';
     return '<span class="' . $iconClass . '" role="img" aria-label="' . e($label) . '" title="' . e($label) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $path . '</svg></span>';
@@ -265,5 +311,6 @@ function apr1Encode(string $first, string $second, string $third, int $length): 
 function formatDate(string $date): string
 {
     $timestamp = strtotime($date);
-    return $timestamp === false ? $date : date('d.m.Y H:i', $timestamp);
+    $format = currentLanguage() === 'en' ? 'Y-m-d H:i' : 'd.m.Y H:i';
+    return $timestamp === false ? $date : date($format, $timestamp);
 }

@@ -18,6 +18,7 @@
                 "sfi_LeapOS/favicon.ico",
                 "sfi_LeapOS/index.php",
                 "sfi_LeapOS/lib.php",
+                "sfi_LeapOS/languages/**",
                 "sfi_LeapOS/style.css",
                 "sfi_LeapOS/admin/.htaccess",
                 "sfi_LeapOS/admin/**",
