@@ -462,13 +462,67 @@ $displayItems = exportRowsForDisplay($items);
 ?>
 <!DOCTYPE html>
 <html lang="<?= e(currentLanguage()) ?>">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= e(t('export.title')) ?></title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"><style>.export-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.export-actions label{min-width:180px}.export-actions select{background:#fff}.select-all{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.86rem;font-weight:700}.select-all input,.check-cell input{width:18px;height:18px}.export-note{margin:0 0 20px;color:var(--muted)}.export-heading{white-space:nowrap;font-size:clamp(2rem,4.4vw,4rem)}.export-links{display:flex;gap:32px;flex-wrap:wrap}.export-links .admin-link{margin:0}.export-table-section thead th{top:0}@media(max-width:700px){.export-actions{align-items:stretch;flex-direction:column}.export-actions button{width:100%}.export-heading{font-size:1.4rem}}</style></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= e(t('export.title')) ?></title><link rel="stylesheet" href="../style.css?v=<?= e(stylesheetVersion()) ?>"></head>
 <body><main class="page-shell">
     <header class="page-header"><div><p class="eyebrow"><?= e(t('export.protected')) ?></p><h1 class="export-heading"><?= e(t('export.title')) ?></h1><p class="intro"><?= e(t('export.intro')) ?></p></div><div class="area-links"><a class="admin-link" href="../admin/"><?= e(t('export.edit_link')) ?></a><a class="admin-link" href="../"><?= e(t('export.intake_link')) ?></a><?= renderLanguageSelector() ?></div></header>
     <?php if ($GLOBALS['export_translation_unavailable']): ?><p class="message error"><?= e(t('export.translation_unavailable')) ?></p><?php endif; ?>
-    <section class="admin-panel"><p class="export-note"><?= e(t('export.note')) ?></p><form class="export-actions" method="post"><label class="select-all"><input id="select-all" type="checkbox"> <?= e(t('export.select_all')) ?></label><button class="small-button" name="action" value="csv" type="submit"><?= e(t('export.csv')) ?></button><button class="small-button" name="action" value="excel" type="submit"><?= e(t('export.excel')) ?></button>
+        <section class="admin-panel export-panel"><p class="export-note"><?= e(t('export.note')) ?></p><form class="export-actions" method="post"><label class="select-all"><input id="select-all" type="checkbox"> <?= e(t('export.select_all')) ?></label><button class="small-button" name="action" value="csv" type="submit"><?= e(t('export.csv')) ?></button><button class="small-button" name="action" value="excel" type="submit"><?= e(t('export.excel')) ?></button>
   <?php foreach ($items as $item): ?><input class="export-id" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" hidden><?php endforeach; ?></form></section>
+        <p id="export-download-error" class="message error" role="alert" hidden></p>
     <section class="table-section export-table-section"><div class="section-heading"><div><p class="eyebrow"><?= e(t('overview')) ?></p><h2><?= e(t('export.translation')) ?></h2></div><span class="count-badge"><?= count($items) ?> <?= e(t(count($items) === 1 ? 'entry' : 'entries')) ?></span></div><div class="table-wrap"><table><thead><tr><th><?= e(t('table.selection')) ?></th><th><?= e(t('table.number')) ?></th><th><?= e(t('table.topic')) ?></th><th><?= e(t('field.model')) ?></th><th><?= e(t('field.version')) ?></th><th><?= e(t('field.category')) ?></th><th><?= e(t('field.classification')) ?></th><th><?= e(t('table.suggestion')) ?></th></tr></thead><tbody>
-    <?php if ($items === []): ?><tr><td class="empty-state" colspan="8"><?= e(t('export.empty')) ?></td></tr><?php else: foreach ($displayItems as $translated): ?><tr><td class="check-cell"><input class="row-select" type="checkbox" value="<?= e($translated['id']) ?>" aria-label="<?= e(t('export.select_row')) ?>"></td><td data-label="<?= e(t('table.number')) ?>"><?= e($translated['number']) ?></td><td data-label="<?= e(t('table.topic')) ?>"><?= e($translated['topic']) ?></td><td data-label="<?= e(t('field.model')) ?>"><span class="model-tag"><?= e($translated['model']) ?></span></td><td data-label="<?= e(t('field.version')) ?>"><?= e($translated['leapos_version']) ?></td><td data-label="<?= e(t('field.category')) ?>"><?= e($translated['category']) ?></td><td data-label="<?= e(t('field.classification')) ?>"><?= e($translated['classification']) ?></td><td data-label="<?= e(t('table.suggestion')) ?>" class="suggestion-cell"><?= nl2br(e($translated['suggestion'])) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
-  <script>const all=document.getElementById('select-all');const rows=[...document.querySelectorAll('.row-select')];const hidden=[...document.querySelectorAll('.export-id')];function sync(){rows.forEach((row,i)=>{hidden[i].checked=row.checked});all.checked=rows.length>0&&rows.every(row=>row.checked)}rows.forEach(row=>row.addEventListener('change',sync));all.addEventListener('change',()=>{rows.forEach(row=>row.checked=all.checked);sync()});</script>
+    <?php if ($items === []): ?><tr><td class="empty-state" colspan="8"><?= e(t('export.empty')) ?></td></tr><?php else: foreach ($displayItems as $translated): ?><tr><td class="check-cell"><label class="export-row-select"><input class="row-select" type="checkbox" value="<?= e($translated['id']) ?>" aria-label="<?= e(t('export.select_row')) ?>"><span class="export-row-select-label"><?= e(t('export.select_row')) ?></span></label></td><td data-label="<?= e(t('table.number')) ?>"><?= e($translated['number']) ?></td><td data-label="<?= e(t('table.topic')) ?>"><?= e($translated['topic']) ?></td><td data-label="<?= e(t('field.model')) ?>"><span class="model-tag"><?= e($translated['model']) ?></span></td><td data-label="<?= e(t('field.version.mobile')) ?>"><?= e($translated['leapos_version']) ?></td><td data-label="<?= e(t('field.category')) ?>"><?= e($translated['category']) ?></td><td data-label="<?= e(t('field.classification.mobile')) ?>"><?= e($translated['classification']) ?></td><td data-label="<?= e(t('table.suggestion')) ?>" class="suggestion-cell"><?= nl2br(e($translated['suggestion'])) ?></td></tr><?php endforeach; endif; ?></tbody></table></div></section>
+    <script>
+        const exportForm = document.querySelector('.export-actions');
+        const all = document.getElementById('select-all');
+        const rows = [...document.querySelectorAll('.row-select')];
+        const hidden = [...document.querySelectorAll('.export-id')];
+        const downloadError = document.getElementById('export-download-error');
+        const downloadErrorText = <?= json_encode(t('export.error.download'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+
+        function sync() {
+            rows.forEach((row, index) => { hidden[index].checked = row.checked; });
+            all.checked = rows.length > 0 && rows.every((row) => row.checked);
+        }
+
+        rows.forEach((row) => row.addEventListener('change', sync));
+        all.addEventListener('change', () => {
+            rows.forEach((row) => { row.checked = all.checked; });
+            sync();
+        });
+        exportForm.addEventListener('submit', async (event) => {
+            const action = event.submitter?.value;
+            if (!['csv', 'excel'].includes(action)) return;
+            event.preventDefault();
+            event.submitter.disabled = true;
+            downloadError.hidden = true;
+
+            try {
+                const formData = new FormData(exportForm);
+                formData.set('action', action);
+                const response = await fetch(exportForm.getAttribute('action') || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                });
+                const expectedType = action === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                if (!response.ok || !response.headers.get('Content-Type')?.includes(expectedType)) {
+                    throw new Error('Export request failed');
+                }
+
+                const objectUrl = URL.createObjectURL(await response.blob());
+                const downloadLink = document.createElement('a');
+                downloadLink.href = objectUrl;
+                downloadLink.download = action === 'csv' ? 'reviewed-suggestions-en.csv' : 'reviewed-suggestions-en.xlsx';
+                document.body.append(downloadLink);
+                downloadLink.click();
+                downloadLink.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+                setTimeout(() => window.location.reload(), 250);
+            } catch {
+                downloadError.textContent = downloadErrorText;
+                downloadError.hidden = false;
+                event.submitter.disabled = false;
+            }
+        });
+    </script>
 </main></body></html>
