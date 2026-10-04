@@ -231,6 +231,33 @@ function selectedReviewedSuggestions(array $suggestions): array
     return array_values(array_filter($suggestions, static fn (array $item): bool => ($item['status'] ?? '') === 'geprüft' && ($ids === [] || in_array($item['id'] ?? '', $ids, true))));
 }
 
+function markExportedSuggestionsAsSent(array $exportedItems): bool
+{
+    $exportedIds = [];
+    foreach ($exportedItems as $item) {
+        $id = is_array($item) ? ($item['id'] ?? '') : '';
+        if (is_string($id) && $id !== '') {
+            $exportedIds[$id] = true;
+        }
+    }
+    if ($exportedIds === []) {
+        return true;
+    }
+
+    $suggestions = loadSuggestions();
+    $changed = false;
+    foreach ($suggestions as &$item) {
+        $id = $item['id'] ?? '';
+        if (is_string($id) && isset($exportedIds[$id]) && ($item['status'] ?? '') === 'geprüft') {
+            $item['status'] = 'versendet';
+            $changed = true;
+        }
+    }
+    unset($item);
+
+    return !$changed || saveSuggestions($suggestions);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['csv', 'excel'], true)) {
     $items = selectedReviewedSuggestions(loadSuggestions());
     $displayItems = exportRowsForDisplay($items);
@@ -239,14 +266,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
         $rows[] = [$translated['number'], $translated['topic'], $translated['model'], $translated['leapos_version'], $translated['category'], $translated['classification'], $translated['suggestion']];
     }
     if ($_POST['action'] === 'csv') {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'reviewed_suggestions_');
+        if ($tmpFile === false) {
+            http_response_code(500);
+            exit(t('export.error.create'));
+        }
+        $output = fopen($tmpFile, 'wb');
+        if ($output === false) {
+            unlink($tmpFile);
+            http_response_code(500);
+            exit(t('export.error.create'));
+        }
+        $writeFailed = fwrite($output, "\xEF\xBB\xBF") === false;
+        foreach ($rows as $row) {
+            if (fputcsv($output, $row, ';', '"', '') === false) {
+                $writeFailed = true;
+                break;
+            }
+        }
+        $writeFailed = !fflush($output) || $writeFailed;
+        fclose($output);
+        if ($writeFailed) {
+            unlink($tmpFile);
+            http_response_code(500);
+            exit(t('export.error.create'));
+        }
+        if (!markExportedSuggestionsAsSent($items)) {
+            unlink($tmpFile);
+            http_response_code(500);
+            exit(t('export.error.mark_sent'));
+        }
+
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="reviewed-suggestions-en.csv"');
-        echo "\xEF\xBB\xBF";
-        $output = fopen('php://output', 'wb');
-        foreach ($rows as $row) {
-            fputcsv($output, $row, ';', '"', '');
-        }
-        fclose($output);
+        readfile($tmpFile);
+        unlink($tmpFile);
         exit;
     }
 
@@ -333,9 +387,13 @@ XML;
     $tmpFile = tempnam(sys_get_temp_dir(), 'reviewed_suggestions_');
     if ($tmpFile === false) {
         http_response_code(500);
-        exit('Export konnte nicht erstellt werden.');
+        exit(t('export.error.create'));
     }
-    $zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    if ($zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        unlink($tmpFile);
+        http_response_code(500);
+        exit(t('export.error.create'));
+    }
     $zip->addFromString('[Content_Types].xml', <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -380,7 +438,16 @@ XML
     );
     $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
     $zip->addFromString('xl/styles.xml', $stylesXml);
-    $zip->close();
+    if (!$zip->close()) {
+        unlink($tmpFile);
+        http_response_code(500);
+        exit(t('export.error.create'));
+    }
+    if (!markExportedSuggestionsAsSent($items)) {
+        unlink($tmpFile);
+        http_response_code(500);
+        exit(t('export.error.mark_sent'));
+    }
 
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="reviewed-suggestions-en.xlsx"');

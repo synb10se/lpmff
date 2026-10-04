@@ -133,6 +133,8 @@ return [
     'export.excel' => 'Excel exportieren',
     'export.translation' => 'Englische Übersetzung',
     'export.translation_unavailable' => 'LibreTranslate ist nicht konfiguriert oder nicht erreichbar. Freitexte werden unverändert ausgegeben. Für die Einrichtung LIBRETRANSLATE_URL setzen; bei geschützten Endpunkten zusätzlich LIBRETRANSLATE_API_KEY.',
+    'export.error.create' => 'Die Exportdatei konnte nicht erstellt werden.',
+    'export.error.mark_sent' => 'Die Einträge konnten nicht als versendet gespeichert werden; der Export wurde abgebrochen.',
     'export.empty' => 'Keine geprüften Vorschläge vorhanden.',
     'export.select_row' => 'Eintrag auswählen',
     'export.edit_link' => 'Vorschläge bearbeiten',

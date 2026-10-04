@@ -27,7 +27,7 @@ Die angebotenen LeapOS-Versionen kombinieren `LEAPOS_VERSIONS` aus `lib.php` mit
 
 URL-Parameter wie `username`, `userID` und `userid` werden nicht ausgewertet. Vorschläge enthalten keine Angaben zum Autor oder zu einer Autorennummer.
 
-Unter `…/export` gibt es eine weitere passwortgeschützte Seite. Sie zeigt ausschließlich Einträge mit dem Status `geprüft` und enthält Nummer, Thema, Modell, LeapOS-Version, Kategorie, Einordnung und Vorschlag. Kategorie und Einordnung erscheinen in Klarschrift; unbekannte Werte werden als `Not specified` ausgewiesen. Der Export ist als CSV oder Excel-kompatible `.xlsx`-Datei verfügbar.
+Unter `…/export` gibt es eine weitere passwortgeschützte Seite. Sie zeigt ausschließlich Einträge mit dem Status `geprüft` und enthält Nummer, Thema, Modell, LeapOS-Version, Kategorie, Einordnung und Vorschlag. Kategorie und Einordnung erscheinen in Klarschrift; unbekannte Werte werden als `Not specified` ausgewiesen. Der Export ist als CSV oder Excel-kompatible `.xlsx`-Datei verfügbar. Erfolgreich exportierte Einträge erhalten anschließend den Status `versendet` und erscheinen nicht mehr in der geprüften Exportliste.
 
 Freitextübersetzungen für Thema und Vorschlag laufen über LibreTranslate. Der kostenlose, selbst gehostete Dienst hat kein festes Anbieter-Zeichenkontingent; tatsächliche Grenzen hängen von der Serverleistung und der Dienstkonfiguration ab. Beispiel für einen lokalen Dienst:
 

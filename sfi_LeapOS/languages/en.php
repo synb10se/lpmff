@@ -133,6 +133,8 @@ return [
     'export.excel' => 'Export Excel',
     'export.translation' => 'English translation',
     'export.translation_unavailable' => 'LibreTranslate is not configured or unavailable. Free-text content is shown unchanged. Set LIBRETRANSLATE_URL to configure it; for protected endpoints, also set LIBRETRANSLATE_API_KEY.',
+    'export.error.create' => 'The export file could not be created.',
+    'export.error.mark_sent' => 'The entries could not be saved as sent; the export was cancelled.',
     'export.empty' => 'No reviewed suggestions are available.',
     'export.select_row' => 'Select entry',
     'export.edit_link' => 'Manage suggestions',
