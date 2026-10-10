@@ -118,6 +118,7 @@ tr:last-child td { border-bottom: 0; }.suggestion-cell { min-width: 0; line-heig
 .page-shell:has(.public-table-section):has(.form-collapsible[open]) > .table-section { flex: 0 0 auto; }
 .page-shell:has(.public-table-section):has(.form-collapsible[open]) .table-wrap { flex: 0 0 auto; max-height: 62vh; }
 @media (max-width: 700px) { .page-shell:has(.public-table-section), .page-shell:has(.admin-table-section) { padding: 16px 16px 10px; }.page-shell:has(.public-table-section) > .page-header, .page-shell:has(.admin-table-section) > .page-header { gap: 10px; margin-bottom: 12px; }.page-shell:has(.public-table-section) > .form-panel { margin-bottom: 12px; padding: 12px 14px; }.page-shell:has(.admin-table-section) > .admin-panel { margin-bottom: 12px; padding: 12px; } }
+@media (max-width: 700px) { .page-shell:has(.public-table-section), .page-shell:has(.admin-table-section) { height: auto; min-height: 100vh; overflow: visible; }.page-shell:has(.public-table-section) > .table-section, .page-shell:has(.admin-table-section) > .table-section { flex: 0 0 auto; }.page-shell:has(.public-table-section) .table-wrap, .page-shell:has(.admin-table-section) .table-wrap { flex: 0 0 auto; max-height: none; overflow: visible; } }
 .public-table-section table, .admin-table-section table { table-layout: fixed; }
 .export-table-section table { table-layout: fixed; }
 .export-table-section th:nth-child(1), .export-table-section td:nth-child(1) { width: 64px; }
