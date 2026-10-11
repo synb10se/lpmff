@@ -14,6 +14,8 @@ Der typische Ablauf ist:
 4. Die Ausgabe wird im Browser als Vorschau in einem `iframe` angezeigt.
 5. Erst nach Passwortprüfung und Bestätigung wird die Datei `kba-statistiken.html` aktualisiert.
 
+![Ablaufschema](/doc/GitHub-Worflow.jpg)
+
 ## Dateien
 
 ### `index.php`
