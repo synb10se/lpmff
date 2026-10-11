@@ -260,16 +260,29 @@ def generate_detail_table(data, column_mapping):
 
     detail_html = '''
     <div class="detail-table-container tab-panel" id="panel-market-electric">
-        <div class="detail-heading">
-            <h2>Marktvergleich Elektro- und Plug-in-Hybrid</h2>
-            <p>Je Marke werden die Jahreswerte kumuliert; die Dezemberfarbe zeigt den relativen Anteil der Marke im Vergleich zur stärksten Marke.</p>
+        <div class="stat-banner" data-panel="panel-market-electric" tabindex="0" role="button" aria-label="Marktvergleich Elektro- und Plug-in-Hybrid anzeigen">
+            <div class="stat-banner__copy">
+                <div class="stat-banner__title">Marktvergleich Elektro- und Plug-in-Hybrid</div>
+                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+            </div>
+            <div class="chart-panel">
+                <h3>Trend pro Monat</h3>
+                <svg id="chart-market-electric" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" aria-label="Diagrammlegende"></div>
+            </div>
+            <button type="button" class="stat-banner__button">Grafik anzeigen</button>
         </div>
-        <div class="table-filter" aria-label="Zeitraumfilter">
-            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
-            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
-            <button type="button" data-filter-reset>Gesamtanzeige</button>
-        </div>
-        <table class="detail-table">
+        <div class="panel-full-content">
+            <div class="detail-heading">
+                <h2>Marktvergleich Elektro- und Plug-in-Hybrid</h2>
+                <p>Je Marke werden die Jahreswerte kumuliert; die Dezemberfarbe zeigt den relativen Anteil der Marke im Vergleich zur stärksten Marke.</p>
+            </div>
+            <div class="table-filter" aria-label="Zeitraumfilter">
+                <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+                <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+                <button type="button" data-filter-reset>Gesamtanzeige</button>
+            </div>
+            <table class="detail-table">
             <thead>
                 <tr>'''
     sortable_headers = []
@@ -347,6 +360,7 @@ def generate_detail_table(data, column_mapping):
         detail_html += '</tr>\n'
     detail_html += '''            </tbody>
         </table>
+    </div>
     </div>
 '''
     return detail_html
@@ -433,16 +447,29 @@ def generate_market_comparison_table(data, column_mapping):
 
     detail_html = '''
     <div class="detail-table-container tab-panel" id="panel-market-comparison">
-        <div class="detail-heading">
-            <h2>Marktvergleich Verbrenner-Elektromobilität</h2>
-            <p>Elektroantrieb umfasst Plug-in-Hybrid und Elektro (BEV); Verbrennerantrieb ist die verbleibende Anzahl. Beide Werte werden über das Jahr kumuliert.</p>
+        <div class="stat-banner" data-panel="panel-market-comparison" tabindex="0" role="button" aria-label="Marktvergleich Verbrenner-Elektromobilität anzeigen">
+            <div class="stat-banner__copy">
+                <div class="stat-banner__title">Marktvergleich Verbrenner-Elektromobilität</div>
+                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+            </div>
+            <div class="chart-panel">
+                <h3>Trend pro Monat</h3>
+                <svg id="chart-market-comparison" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" aria-label="Diagrammlegende"></div>
+            </div>
+            <button type="button" class="stat-banner__button">Grafik anzeigen</button>
         </div>
-        <div class="table-filter" aria-label="Zeitraumfilter">
-            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
-            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
-            <button type="button" data-filter-reset>Gesamtanzeige</button>
-        </div>
-        <table class="comparison-table">
+        <div class="panel-full-content">
+            <div class="detail-heading">
+                <h2>Marktvergleich Verbrenner-Elektromobilität</h2>
+                <p>Elektroantrieb umfasst Plug-in-Hybrid und Elektro (BEV); Verbrennerantrieb ist die verbleibende Anzahl. Beide Werte werden über das Jahr kumuliert.</p>
+            </div>
+            <div class="table-filter" aria-label="Zeitraumfilter">
+                <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+                <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+                <button type="button" data-filter-reset>Gesamtanzeige</button>
+            </div>
+            <table class="comparison-table">
             <thead>
                 <tr>
                     <th data-sortable data-sort-key="year" data-sort-column="0" tabindex="0">Jahr</th>
@@ -506,6 +533,7 @@ def generate_market_comparison_table(data, column_mapping):
 
     detail_html += '''            </tbody>
         </table>
+        </div>
     </div>
 '''
     return detail_html
@@ -568,6 +596,150 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         .tab-panel.active {
             display: block;
         }
+        .panel-full-content {
+            display: block;
+        }
+        .stat-banner {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(180px, min(34vw, 420px)) minmax(0, 1fr);
+            align-items: center;
+            gap: 18px;
+            padding: 12px 18px;
+            margin: 12px 0 18px;
+            background: #f3f5f6;
+            border: 1px solid #d5dadd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .stat-banner:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.45);
+            outline-offset: 2px;
+        }
+        .stat-banner__title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .stat-banner__copy {
+            grid-column: 1;
+            min-width: 0;
+        }
+        .stat-banner__meta {
+            font-size: 12px;
+            color: #4b5563;
+            margin-top: 4px;
+        }
+        .stat-banner__button {
+            grid-column: 3;
+            justify-self: end;
+            border: 1px solid #93c5fd;
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .stat-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.65);
+        }
+        .stat-modal[hidden] {
+            display: none;
+        }
+        .stat-modal__backdrop {
+            position: absolute;
+            inset: 0;
+        }
+        .stat-modal__dialog {
+            position: relative;
+            width: min(98vw, 1650px);
+            max-height: 96vh;
+            overflow: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.24);
+            padding: 18px 18px 12px;
+            z-index: 1;
+        }
+        .stat-modal__close {
+            position: sticky;
+            top: 8px;
+            float: right;
+            margin-left: 12px;
+            border: none;
+            background: #e5e7eb;
+            color: #111827;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .stat-modal__body .panel-full-content {
+            display: block;
+        }
+        .stat-banner .chart-panel {
+            grid-column: 2;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            cursor: zoom-in;
+        }
+        .stat-banner .chart-panel h3,
+        .stat-banner .chart-legend {
+            display: none;
+        }
+        .stat-banner .trend-chart {
+            height: 52px;
+            background: none;
+            border: 0;
+            border-radius: 0;
+        }
+        .stat-banner .trend-chart text,
+        .stat-banner .trend-chart line {
+            display: none;
+        }
+        .stat-modal__body .chart-panel {
+            width: 100%;
+            margin: 0;
+            cursor: default;
+        }
+        .stat-modal__body .trend-chart {
+            height: min(58vh, 520px);
+            background: #fff;
+            border: 0;
+        }
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #374151;
+        }
+        .chart-legend__item {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .chart-legend__swatch {
+            width: 18px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        body.modal-open {
+            overflow: hidden;
+        }
         .table-container {
             max-height: 80vh;
             overflow: auto;
@@ -584,6 +756,27 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-panel {
+            margin: 18px 0 12px;
+            background: white;
+            border: 1px solid #d7dbe8;
+            border-radius: 8px;
+            padding: 12px 12px 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .chart-panel h3 {
+            margin: 0 0 10px;
+            font-size: 15px;
+            color: #2d3748;
+        }
+        .trend-chart {
+            width: 100%;
+            height: 260px;
+            display: block;
+            background: linear-gradient(#f9fafc, #ffffff);
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
         }
         .table-container h2,
         .detail-table-container h2 {
@@ -741,6 +934,25 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             font-family: Arial, sans-serif;
         }
         @media (max-width: 700px) {
+            .stat-banner {
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 10px 14px;
+            }
+            .stat-banner__copy {
+                grid-column: 1;
+                min-width: 0;
+            }
+            .stat-banner__button {
+                grid-column: 2;
+                grid-row: 1;
+            }
+            .stat-banner .chart-panel {
+                grid-column: 1 / -1;
+                max-width: none;
+            }
+            .stat-banner .trend-chart {
+                height: 44px;
+            }
             .tab-list {
                 flex-direction: column;
             }
@@ -778,16 +990,29 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="panel-market-comparison">Marktvergleich Verbrenner-Elektromobilität</button>
         </div>
     <div class="table-container tab-panel active" id="panel-registrations">
-        <div class="detail-heading">
-            <h2>Neuzulassungen Leapmotor</h2>
-            <p>Die Tabelle zeigt ausschließlich LEAPMOTOR-Neuzulassungen; die kumulierte Anzahl wird innerhalb jedes Jahres fortgeschrieben.</p>
+        <div class="stat-banner" data-panel="panel-registrations" tabindex="0" role="button" aria-label="Neuzulassungen Leapmotor anzeigen">
+            <div class="stat-banner__copy">
+                <div class="stat-banner__title">Neuzulassungen Leapmotor</div>
+                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+            </div>
+            <div class="chart-panel">
+                <h3>Trend pro Modell und Monat</h3>
+                <svg id="chart-registrations" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" aria-label="Diagrammlegende"></div>
+            </div>
+            <button type="button" class="stat-banner__button">Grafik anzeigen</button>
         </div>
-        <div class="table-filter" aria-label="Zeitraumfilter">
-            <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
-            <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
-            <button type="button" data-filter-reset>Gesamtanzeige</button>
-        </div>
-        <table>
+        <div class="panel-full-content">
+            <div class="detail-heading">
+                <h2>Neuzulassungen Leapmotor</h2>
+                <p>Die Tabelle zeigt ausschließlich LEAPMOTOR-Neuzulassungen; die kumulierte Anzahl wird innerhalb jedes Jahres fortgeschrieben.</p>
+            </div>
+            <div class="table-filter" aria-label="Zeitraumfilter">
+                <label>Jahr <select data-filter="year"><option value="">Alle</option></select></label>
+                <label>Monat <select data-filter="month"><option value="">Alle</option></select></label>
+                <button type="button" data-filter-reset>Gesamtanzeige</button>
+            </div>
+            <table>
             <thead>
                 <tr>
                     <th rowspan="2" data-sortable data-sort-key="year" data-sort-column="0" tabindex="0">Jahr</th>
@@ -901,6 +1126,7 @@ def generate_html(aggregated_data, target_models, detail_data=None,
     
     html += '''            </tbody>
         </table>
+        </div>
     </div>
 '''
     if detail_data is not None and column_mapping is not None:
@@ -909,22 +1135,12 @@ def generate_html(aggregated_data, target_models, detail_data=None,
 
     html += '''</div>
     <script>
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.tab-button').forEach(tab => {
-                    tab.classList.toggle('active', tab === button);
-                    tab.setAttribute('aria-selected', tab === button ? 'true' : 'false');
-                });
-                document.querySelectorAll('.tab-panel').forEach(panel => {
-                    panel.classList.toggle('active', panel.id === button.dataset.tab);
-                });
-            });
-        });
-
         const monthOrder = {
             Januar: 1, Februar: 2, März: 3, April: 4, Mai: 5, Juni: 6,
             Juli: 7, August: 8, September: 9, Oktober: 10, November: 11, Dezember: 12
         };
+        const chartColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f'];
+
         const panels = Array.from(document.querySelectorAll('.tab-panel'));
         const filters = Array.from(document.querySelectorAll('.table-filter'));
         const allRows = panels.map(panel => Array.from(panel.querySelectorAll('tbody tr')));
@@ -935,6 +1151,16 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         const tables = panels
             .map(panel => panel.querySelector('table'))
             .filter(Boolean);
+
+        const parseNumericValue = value => {
+            if (value === null || value === undefined) return 0;
+            const cleaned = String(value)
+                .replace(/\\s+/g, '')
+                .replace(/\\./g, '')
+                .replace(',', '.');
+            const number = Number(cleaned.replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(number) ? number : 0;
+        };
 
         const getMonthNumber = row => monthOrder[row.cells[1]?.textContent.trim()] || 0;
         const latestYear = years.includes(String(new Date().getFullYear()))
@@ -950,12 +1176,179 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             ? months.find(month => monthOrder[month] === latestMonth)
             : '';
 
-        filters.forEach(filter => {
-            const yearSelect = filter.querySelector('[data-filter="year"]');
-            const monthSelect = filter.querySelector('[data-filter="month"]');
-            years.forEach(year => yearSelect.appendChild(new Option(year, year)));
-            months.forEach(month => monthSelect.appendChild(new Option(month, month)));
-        });
+        const chartData = new Map();
+        const renderTrendChart = (target, xLabels, seriesList, compact = true) => {
+            const svg = typeof target === 'string' ? document.getElementById(target) : target;
+            if (!svg) return;
+            if (svg.id) chartData.set(svg.id, { xLabels, seriesList });
+            svg.innerHTML = '';
+            const legend = svg.parentElement.querySelector('.chart-legend');
+            if (legend) legend.innerHTML = '';
+
+            if (!xLabels.length || !seriesList.length) {
+                if (!compact) {
+                    svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="#666" font-size="13">Keine Daten</text>';
+                }
+                return;
+            }
+
+            const width = 900;
+            const height = compact ? 150 : 400;
+            const margin = compact
+                ? { top: 12, right: 12, bottom: 12, left: 12 }
+                : { top: 24, right: 30, bottom: 116, left: 64 };
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+            const allValues = seriesList.flatMap(series => series.values).filter(value => Number.isFinite(value));
+            const maxValue = allValues.length ? Math.max(...allValues, 0) : 1;
+            const safeMax = maxValue > 0 ? maxValue * 1.2 : 1;
+            const xFor = index => margin.left + (xLabels.length > 1 ? (index / (xLabels.length - 1)) * innerWidth : innerWidth / 2);
+            const yFor = value => margin.top + innerHeight - (value / safeMax) * innerHeight;
+
+            if (!compact) {
+                for (let tick = 0; tick <= 4; tick += 1) {
+                    const value = (safeMax / 4) * tick;
+                    const y = yFor(value);
+                    const label = value.toLocaleString('de-DE', { maximumFractionDigits: 0 });
+                    svg.insertAdjacentHTML('beforeend', `
+                        <line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />
+                        <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#555">${label}</text>
+                    `);
+                }
+
+                svg.insertAdjacentHTML('beforeend', `
+                    <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#666" stroke-width="1" />
+                    <line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#666" stroke-width="1" />
+                `);
+
+                xLabels.forEach((label, index) => {
+                    const x = xFor(index);
+                    const y = height - margin.bottom + 18;
+                    svg.insertAdjacentHTML('beforeend', `
+                        <text x="${x}" y="${y}" transform="rotate(-45 ${x} ${y})" text-anchor="end" font-size="11" fill="#555">${label}</text>
+                    `);
+                });
+            }
+
+            seriesList.forEach((series, seriesIndex) => {
+                const points = series.values.map((value, index) => {
+                    const x = xFor(index);
+                    const y = yFor(value);
+                    return `${x},${y}`;
+                }).join(' ');
+                const color = chartColors[seriesIndex % chartColors.length];
+                svg.insertAdjacentHTML('beforeend', `
+                    <polyline fill="none" stroke="${color}" stroke-width="${compact ? 4 : 2.5}" points="${points}" />
+                    ${compact ? '' : series.values.map((value, index) => {
+                        const x = xFor(index);
+                        const y = yFor(value);
+                        return `<circle cx="${x}" cy="${y}" r="3" fill="${color}" />`;
+                    }).join('')}
+                `);
+                if (legend) {
+                    const item = document.createElement('span');
+                    item.className = 'chart-legend__item';
+                    const swatch = document.createElement('span');
+                    swatch.className = 'chart-legend__swatch';
+                    swatch.style.backgroundColor = color;
+                    const label = document.createElement('span');
+                    label.textContent = series.name;
+                    item.append(swatch, label);
+                    legend.appendChild(item);
+                }
+            });
+        };
+
+        const buildRegistrationsTrend = () => {
+            const table = document.querySelector('#panel-registrations table');
+            if (!table) return;
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.hidden);
+            const headerCells = Array.from(table.querySelectorAll('thead th[colspan]'));
+            const models = headerCells
+                .map(cell => (cell.textContent || '').replace(/\\s+/g, ' ').trim())
+                .map(value => value.match(/^[A-Z0-9]+/) ? value.match(/^[A-Z0-9]+/)[0] : '')
+                .filter(Boolean);
+            const modelIndexes = [];
+            let offset = 3;
+            models.forEach(model => {
+                const span = Number(table.querySelector(`.group-${model}`)?.getAttribute('colspan')) || 1;
+                modelIndexes.push({ model, index: offset });
+                offset += span;
+            });
+
+            const pointsByLabel = new Map();
+            rows.forEach(row => {
+                const year = row.cells[0]?.textContent.trim();
+                const month = row.cells[1]?.textContent.trim();
+                if (!year || !month) return;
+                const label = `${year} ${month}`;
+                const entry = pointsByLabel.get(label) || {};
+                modelIndexes.forEach(({ model, index }) => {
+                    entry[model] = parseNumericValue(row.cells[index]?.textContent || '0');
+                });
+                pointsByLabel.set(label, entry);
+            });
+
+            const labels = [...pointsByLabel.keys()];
+            const seriesList = models.map(model => ({
+                name: model,
+                values: labels.map(label => pointsByLabel.get(label)?.[model] || 0)
+            }));
+            renderTrendChart('chart-registrations', labels, seriesList);
+        };
+
+        const buildMarketElectricTrend = () => {
+            const table = document.querySelector('#panel-market-electric table');
+            if (!table) return;
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.hidden);
+            const grouped = new Map();
+            rows.forEach(row => {
+                const year = row.cells[0]?.textContent.trim();
+                const month = row.cells[1]?.textContent.trim();
+                if (!year || !month) return;
+                const label = `${year} ${month}`;
+                const current = grouped.get(label) || { reev: 0, bev: 0 };
+                current.reev += parseNumericValue(row.cells[4]?.textContent || '0');
+                current.bev += parseNumericValue(row.cells[5]?.textContent || '0');
+                grouped.set(label, current);
+            });
+            const labels = [...grouped.keys()];
+            const seriesList = [
+                { name: 'Plug-in-Hybrid', values: labels.map(label => grouped.get(label)?.reev || 0) },
+                { name: 'Elektro (BEV)', values: labels.map(label => grouped.get(label)?.bev || 0) }
+            ];
+            renderTrendChart('chart-market-electric', labels, seriesList);
+        };
+
+        const buildMarketComparisonTrend = () => {
+            const table = document.querySelector('#panel-market-comparison table');
+            if (!table) return;
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.hidden);
+            const grouped = new Map();
+            rows.forEach(row => {
+                const year = row.cells[0]?.textContent.trim();
+                const month = row.cells[1]?.textContent.trim();
+                if (!year || !month) return;
+                const label = `${year} ${month}`;
+                const current = grouped.get(label) || { elektro: 0, verbrenner: 0 };
+                current.elektro += parseNumericValue(row.cells[3]?.textContent || '0');
+                current.verbrenner += parseNumericValue(row.cells[4]?.textContent || '0');
+                grouped.set(label, current);
+            });
+            const labels = [...grouped.keys()];
+            const seriesList = [
+                { name: 'Elektroantrieb', values: labels.map(label => grouped.get(label)?.elektro || 0) },
+                { name: 'Verbrennerantrieb', values: labels.map(label => grouped.get(label)?.verbrenner || 0) }
+            ];
+            renderTrendChart('chart-market-comparison', labels, seriesList);
+        };
+
+        const renderAllTrendCharts = () => {
+            buildRegistrationsTrend();
+            buildMarketElectricTrend();
+            buildMarketComparisonTrend();
+        };
 
         const sortTable = (table, header) => {
             const column = Number(header.dataset.sortColumn);
@@ -978,7 +1371,104 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 otherHeader.removeAttribute('aria-sort');
             });
             header.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+            renderAllTrendCharts();
         };
+
+        const applyGlobalFilter = (year, month) => {
+            filters.forEach(filter => {
+                filter.querySelector('[data-filter="year"]').value = year;
+                filter.querySelector('[data-filter="month"]').value = month;
+            });
+            allRows.forEach(rows => rows.forEach(row => {
+                const matchesYear = !year || row.cells[0]?.textContent.trim() === year;
+                const matchesMonth = !month || row.cells[1]?.textContent.trim() === month;
+                row.hidden = !(matchesYear && matchesMonth);
+            }));
+            renderAllTrendCharts();
+        };
+
+        filters.forEach(filter => {
+            const yearSelect = filter.querySelector('[data-filter="year"]');
+            const monthSelect = filter.querySelector('[data-filter="month"]');
+            years.forEach(year => yearSelect.appendChild(new Option(year, year)));
+            months.forEach(month => monthSelect.appendChild(new Option(month, month)));
+            yearSelect.addEventListener('change', () => {
+                applyGlobalFilter(yearSelect.value, monthSelect.value);
+            });
+            monthSelect.addEventListener('change', () => {
+                applyGlobalFilter(yearSelect.value, monthSelect.value);
+            });
+            filter.querySelector('[data-filter-reset]').addEventListener('click', () => {
+                applyGlobalFilter('', '');
+            });
+        });
+
+        const modal = document.createElement('div');
+        modal.className = 'stat-modal';
+        modal.hidden = true;
+        modal.innerHTML = `
+            <div class="stat-modal__backdrop"></div>
+            <div class="stat-modal__dialog">
+                <button type="button" class="stat-modal__close" aria-label="Fenster schließen">×</button>
+                <div class="stat-modal__body"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeModal = () => {
+            modal.hidden = true;
+            document.body.classList.remove('modal-open');
+            const body = modal.querySelector('.stat-modal__body');
+            if (body) body.innerHTML = '';
+        };
+
+        const openModal = panelId => {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            const chart = panel.querySelector('.stat-banner .chart-panel');
+            if (!chart) return;
+            const clone = chart.cloneNode(true);
+            const sourceChartId = chart.querySelector('svg')?.id;
+            const data = chartData.get(sourceChartId);
+            const cloneSvg = clone.querySelector('svg');
+            if (cloneSvg && data) {
+                cloneSvg.removeAttribute('id');
+                renderTrendChart(cloneSvg, data.xLabels, data.seriesList, false);
+            }
+            const body = modal.querySelector('.stat-modal__body');
+            if (!body) return;
+            body.innerHTML = '';
+            body.appendChild(clone);
+            modal.hidden = false;
+            document.body.classList.add('modal-open');
+            const closeButton = modal.querySelector('.stat-modal__close');
+            if (closeButton) closeButton.onclick = closeModal;
+            const backdrop = modal.querySelector('.stat-modal__backdrop');
+            if (backdrop) backdrop.onclick = closeModal;
+        };
+
+        document.querySelectorAll('.stat-banner').forEach(banner => {
+            const openFromBanner = () => openModal(banner.dataset.panel);
+            banner.addEventListener('click', openFromBanner);
+            banner.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openFromBanner();
+                }
+            });
+        });
+
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(tab => {
+                    tab.classList.toggle('active', tab === button);
+                    tab.setAttribute('aria-selected', tab === button ? 'true' : 'false');
+                });
+                document.querySelectorAll('.tab-panel').forEach(panel => {
+                    panel.classList.toggle('active', panel.id === button.dataset.tab);
+                });
+            });
+        });
 
         tables.forEach(table => table.querySelectorAll('th[data-sortable]').forEach(header => {
             const handleSort = () => sortTable(table, header);
@@ -991,29 +1481,6 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             });
         }));
 
-        const applyGlobalFilter = (year, month) => {
-            filters.forEach(filter => {
-                filter.querySelector('[data-filter="year"]').value = year;
-                filter.querySelector('[data-filter="month"]').value = month;
-            });
-            allRows.forEach(rows => rows.forEach(row => {
-                const matchesYear = !year || row.cells[0]?.textContent.trim() === year;
-                const matchesMonth = !month || row.cells[1]?.textContent.trim() === month;
-                row.hidden = !(matchesYear && matchesMonth);
-            }));
-        };
-
-        filters.forEach(filter => {
-            filter.querySelectorAll('select').forEach(select => select.addEventListener('change', () => {
-                applyGlobalFilter(
-                    filter.querySelector('[data-filter="year"]').value,
-                    filter.querySelector('[data-filter="month"]').value,
-                );
-            }));
-            filter.querySelector('[data-filter-reset]').addEventListener('click', () => {
-                applyGlobalFilter('', '');
-            });
-        });
         applyGlobalFilter(latestYear, defaultMonth);
     </script>
 </body>
