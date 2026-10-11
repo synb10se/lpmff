@@ -20,21 +20,28 @@ $generatedHtml = $savedHtml;
 $hasPendingHtml = false;
 
 if (is_string($pendingHtml) && $pendingHtml !== '') {
-  $generatedHtml = $pendingHtml;
-  $hasPendingHtml = true;
-  if ($savedMtime > $pendingMtime) {
+  if ($savedMtime > 0 && $savedMtime > $pendingMtime) {
+    unset($_SESSION['pending_html'], $_SESSION['pending_html_mtime']);
     $generatedHtml = $savedHtml;
     $hasPendingHtml = false;
+  } else {
+    $generatedHtml = $pendingHtml;
+    $hasPendingHtml = true;
   }
-} elseif (is_string($sessionGeneratedHtml) && $sessionGeneratedHtml !== '' && $savedMtime <= $sessionGeneratedMtime) {
-  $generatedHtml = $sessionGeneratedHtml;
+} elseif (is_string($sessionGeneratedHtml) && $sessionGeneratedHtml !== '') {
+  if ($savedMtime > 0 && $savedMtime > $sessionGeneratedMtime) {
+    unset($_SESSION['generated_html'], $_SESSION['generated_html_mtime']);
+    $generatedHtml = $savedHtml;
+  } else {
+    $generatedHtml = $sessionGeneratedHtml;
+  }
 }
 
 if ($generatedHtml === '' && $savedHtml !== '') {
   $generatedHtml = $savedHtml;
 }
 
-if ($generatedHtml !== '' && !isset($_SESSION['generated_html'])) {
+if ($generatedHtml !== '') {
   $_SESSION['generated_html'] = $generatedHtml;
   $_SESSION['generated_html_mtime'] = $savedMtime > 0 ? $savedMtime : time();
 }
