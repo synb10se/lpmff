@@ -36,10 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = t('error.suggestion');
     } else {
         $suggestions = loadSuggestions();
+        $sourceLanguage = currentLanguage();
         $suggestions[] = [
             'id' => bin2hex(random_bytes(8)),
           'number' => nextSuggestionNumber($suggestions),
             'created_at' => date(DATE_ATOM),
+            'source_language' => $sourceLanguage,
             'topic' => $oldInput['topic'],
             'model' => $oldInput['model'],
             'leapos_version' => $oldInput['leapos_version'],
@@ -47,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'classification' => $oldInput['classification'],
             'suggestion' => $oldInput['suggestion'],
             'status' => 'erfasst',
+            'translations' => buildSuggestionTranslations($oldInput['topic'], $oldInput['suggestion'], $sourceLanguage),
         ];
 
         if (saveSuggestions($suggestions)) {
@@ -171,13 +174,13 @@ $suggestions = array_reverse($allSuggestions);
           <?php if ($suggestions === []): ?>
             <tr><td class="empty-state" colspan="6"><?= e(t('table.empty')) ?></td></tr>
           <?php else: foreach ($suggestions as $item): ?>
-            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e($item['topic'] ?? '') ?>" data-filter-suggestion="<?= e($item['suggestion'] ?? '') ?>">
+            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-filter-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>">
               <td data-label="<?= e(t('table.number')) ?>"><?= e($item['number'] ?? '') ?></td>
               <td data-label="<?= e(t('table.created')) ?>"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
-              <td data-label="<?= e(t('table.topic')) ?>" data-field="topic"><?= e($item['topic'] ?? '') ?></td>
+              <td data-label="<?= e(t('table.topic')) ?>" data-field="topic"><?= e(suggestionTextForLanguage($item, 'topic')) ?></td>
               <td data-label="<?= e(t('table.model_version')) ?>"><div class="model-version-tags"><span class="model-tag"><?= e(($item['model'] ?? '') === ALL_MODELS ? t('model.all') : ($item['model'] ?? '---')) ?></span><span class="model-tag"><?= e(displayLeapOsVersion($item['leapos_version'] ?? null) === UNKNOWN_LEAPOS_VERSION ? t('version.all') : displayLeapOsVersion($item['leapos_version'] ?? null)) ?></span></div></td>
-              <td data-label="<?= e(t('table.suggestion')) ?>" data-field="suggestion" class="suggestion-cell"><?= nl2br(e($item['suggestion'] ?? '')) ?></td>
+              <td data-label="<?= e(t('table.suggestion')) ?>" data-field="suggestion" class="suggestion-cell"><?= nl2br(e(suggestionTextForLanguage($item, 'suggestion'))) ?></td>
             </tr>
           <?php endforeach; endif; ?>
           <tr data-filter-empty hidden><td class="empty-state" colspan="6"><?= e(t('table.no_matches')) ?></td></tr>

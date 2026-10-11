@@ -28,6 +28,125 @@ function currentLanguage(): string
     return in_array($language, SUPPORTED_LANGUAGES, true) ? $language : 'de';
 }
 
+function translateTextForLanguage(string $text, string $sourceLanguage, string $targetLanguage): string
+{
+    if ($text === '' || $sourceLanguage === $targetLanguage) {
+        return $text;
+    }
+
+    $endpoint = libreTranslateEndpoint();
+    if ($endpoint === '') {
+        return $text;
+    }
+
+    $payload = ['q' => [$text], 'source' => $sourceLanguage, 'target' => $targetLanguage, 'format' => 'text'];
+    $requestBody = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+    $response = null;
+    if (function_exists('curl_init')) {
+        $curl = curl_init($endpoint);
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $requestBody,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $curlResponse = curl_exec($curl);
+        $httpStatus = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        curl_close($curl);
+        if (is_string($curlResponse) && $httpStatus >= 200 && $httpStatus < 300) {
+            $response = $curlResponse;
+        }
+    } else {
+        $response = @file_get_contents($endpoint, false, stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                'content' => $requestBody,
+                'timeout' => 15,
+                'ignore_errors' => true,
+            ],
+        ]));
+    }
+
+    if (!is_string($response) || $response === '') {
+        return $text;
+    }
+
+    try {
+        $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        return $text;
+    }
+
+    $translations = $decoded['translatedText'] ?? null;
+    if (!is_array($translations) || $translations === []) {
+        return $text;
+    }
+
+    $translated = trim((string) ($translations[0] ?? ''));
+    return $translated !== '' ? $translated : $text;
+}
+
+function buildSuggestionTranslations(string $topic, string $suggestion, string $sourceLanguage): array
+{
+    $translations = [];
+    foreach (SUPPORTED_LANGUAGES as $language) {
+        if ($language === $sourceLanguage) {
+            continue;
+        }
+        $translations[$language] = [
+            'topic' => translateTextForLanguage($topic, $sourceLanguage, $language),
+            'suggestion' => translateTextForLanguage($suggestion, $sourceLanguage, $language),
+        ];
+    }
+    return $translations;
+}
+
+function suggestionTextForLanguage(array $item, string $field, ?string $language = null): string
+{
+    $language = $language ?? currentLanguage();
+    $sourceLanguage = is_string($item['source_language'] ?? null) && in_array($item['source_language'], SUPPORTED_LANGUAGES, true)
+        ? $item['source_language']
+        : 'de';
+    $translations = is_array($item['translations'] ?? null) ? $item['translations'] : [];
+
+    if (isset($translations[$language][$field]) && is_string($translations[$language][$field])) {
+        $translated = trim((string) $translations[$language][$field]);
+        if ($translated !== '') {
+            return $translated;
+        }
+    }
+
+    $value = is_string($item[$field] ?? null) ? trim((string) $item[$field]) : '';
+    if ($language === $sourceLanguage && $value !== '') {
+        return $value;
+    }
+
+    if ($language !== $sourceLanguage) {
+        $translated = translateTextForLanguage($value !== '' ? $value : (string) ($item['topic'] ?? ''), $sourceLanguage, $language);
+        if ($translated !== '' && $translated !== $value) {
+            return $translated;
+        }
+    }
+
+    if ($value !== '') {
+        return $value;
+    }
+
+    if ($language !== $sourceLanguage && isset($translations[$sourceLanguage][$field]) && is_string($translations[$sourceLanguage][$field])) {
+        $fallback = trim((string) $translations[$sourceLanguage][$field]);
+        if ($fallback !== '') {
+            return $fallback;
+        }
+    }
+
+    return '';
+}
+
 function libreTranslateEndpoint(): string
 {
     return trim((string) (getenv('LIBRETRANSLATE_URL') ?: LIBRETRANSLATE_DEFAULT_URL));
@@ -183,6 +302,16 @@ function loadSuggestions(): array
                 $needsSave = true;
             }
             unset($suggestion['author'], $suggestion['author_id']);
+
+            if (!isset($suggestion['source_language']) || !in_array($suggestion['source_language'], SUPPORTED_LANGUAGES, true)) {
+                $suggestion['source_language'] = 'de';
+                $needsSave = true;
+            }
+
+            if (!is_array($suggestion['translations'] ?? null)) {
+                $suggestion['translations'] = [];
+                $needsSave = true;
+            }
 
             $number = $suggestion['number'] ?? null;
             if (!is_int($number) || $number < 1 || isset($assignedNumbers[$number])) {
