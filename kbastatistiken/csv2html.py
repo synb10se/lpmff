@@ -268,6 +268,7 @@ def generate_detail_table(data, column_mapping):
             <div class="chart-panel">
                 <h3>Trend pro Monat</h3>
                 <svg id="chart-market-electric" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-tooltip" role="status" aria-live="polite"></div>
                 <div class="chart-legend" aria-label="Diagrammlegende"></div>
             </div>
             <button type="button" class="stat-banner__button">Grafik anzeigen</button>
@@ -345,10 +346,14 @@ def generate_detail_table(data, column_mapping):
             monat,
             marke,
             cumulative_anzahl,
-            f'{cumulative_totals[total_key]["reev"]:,.0f}'.replace(',', '.'),
-            f'{cumulative_totals[total_key]["bev"]:,.0f}'.replace(',', '.'),
+            f'{monthly_values["reev"]:,.0f}'.replace(',', '.'),
+            f'{monthly_values["bev"]:,.0f}'.replace(',', '.'),
         ]
-        detail_html += f'                <tr{row_class}>'
+        detail_html += (
+            f'                <tr{row_class} '
+            f'data-reev-monthly="{monthly_values["reev"]}" '
+            f'data-bev-monthly="{monthly_values["bev"]}">'
+        )
         detail_html += ''.join(
             f'<td style="background-color: {share_color}; color: {share_text_color}">{html_module.escape(value)}</td>'
             if monat == 'Dezember' and index == 3 and share_color
@@ -455,6 +460,7 @@ def generate_market_comparison_table(data, column_mapping):
             <div class="chart-panel">
                 <h3>Trend pro Monat</h3>
                 <svg id="chart-market-comparison" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-tooltip" role="status" aria-live="polite"></div>
                 <div class="chart-legend" aria-label="Diagrammlegende"></div>
             </div>
             <button type="button" class="stat-banner__button">Grafik anzeigen</button>
@@ -512,17 +518,22 @@ def generate_market_comparison_table(data, column_mapping):
 
     for key, totals in comparison_rows:
         jahr, monat = key
+        monthly_values = monthly_totals[(jahr, monat)]
         anzahl = totals['elektro'] + totals['verbrenner']
         values = [
             jahr, monat,
             f'{anzahl:,.0f}'.replace(',', '.'),
-            f'{totals["elektro"]:,.0f}'.replace(',', '.'),
-            f'{totals["verbrenner"]:,.0f}'.replace(',', '.'),
+            f'{monthly_values["elektro"]:,.0f}'.replace(',', '.'),
+            f'{monthly_values["verbrenner"]:,.0f}'.replace(',', '.'),
             period_leaders[(jahr, monat)]['elektro'],
             period_leaders[(jahr, monat)]['verbrenner'],
         ]
         row_class = ' class="detail-december-row"' if monat == 'Dezember' else ''
-        detail_html += f'                <tr{row_class}>'
+        detail_html += (
+            f'                <tr{row_class} '
+            f'data-elektro-monthly="{monthly_values["elektro"]}" '
+            f'data-verbrenner-monthly="{monthly_values["verbrenner"]}">'
+        )
         detail_html += ''.join(
             f'<td class="detail-december-cell">{html_module.escape(value)}</td>'
             if monat == 'Dezember'
@@ -696,7 +707,8 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             cursor: zoom-in;
         }
         .stat-banner .chart-panel h3,
-        .stat-banner .chart-legend {
+        .stat-banner .chart-legend,
+        .stat-banner .chart-tooltip {
             display: none;
         }
         .stat-banner .trend-chart {
@@ -726,6 +738,38 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             margin-top: 10px;
             font-size: 13px;
             color: #374151;
+        }
+        .chart-panel {
+            position: relative;
+        }
+        .chart-tooltip {
+            display: none;
+            position: absolute;
+            top: 42px;
+            right: 22px;
+            z-index: 2;
+            max-width: min(70%, 360px);
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            background: #fff;
+            color: #1f2937;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .chart-tooltip.is-visible {
+            display: block;
+        }
+        .chart-point {
+            cursor: pointer;
+            stroke: #fff;
+            stroke-width: 1.5;
+        }
+        .chart-point:focus {
+            stroke: #111827;
+            stroke-width: 3;
+            outline: none;
         }
         .chart-legend__item {
             display: inline-flex;
@@ -998,6 +1042,7 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             <div class="chart-panel">
                 <h3>Trend pro Modell und Monat</h3>
                 <svg id="chart-registrations" class="trend-chart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-tooltip" role="status" aria-live="polite"></div>
                 <div class="chart-legend" aria-label="Diagrammlegende"></div>
             </div>
             <button type="button" class="stat-banner__button">Grafik anzeigen</button>
@@ -1183,7 +1228,13 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             if (svg.id) chartData.set(svg.id, { xLabels, seriesList });
             svg.innerHTML = '';
             const legend = svg.parentElement.querySelector('.chart-legend');
+            const tooltip = svg.parentElement.querySelector('.chart-tooltip');
             if (legend) legend.innerHTML = '';
+            if (tooltip) {
+                tooltip.textContent = '';
+                tooltip.classList.remove('is-visible');
+                delete tooltip.dataset.pinned;
+            }
 
             if (!xLabels.length || !seriesList.length) {
                 if (!compact) {
@@ -1240,12 +1291,56 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 const color = chartColors[seriesIndex % chartColors.length];
                 svg.insertAdjacentHTML('beforeend', `
                     <polyline fill="none" stroke="${color}" stroke-width="${compact ? 4 : 2.5}" points="${points}" />
-                    ${compact ? '' : series.values.map((value, index) => {
+                `);
+                if (!compact) {
+                    series.values.forEach((value, index) => {
                         const x = xFor(index);
                         const y = yFor(value);
-                        return `<circle cx="${x}" cy="${y}" r="3" fill="${color}" />`;
-                    }).join('')}
-                `);
+                        const label = `${xLabels[index]}: ${series.name}, ${value.toLocaleString('de-DE')}`;
+                        const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        point.setAttribute('cx', x);
+                        point.setAttribute('cy', y);
+                        point.setAttribute('r', '5');
+                        point.setAttribute('fill', color);
+                        point.setAttribute('class', 'chart-point');
+                        point.setAttribute('tabindex', '0');
+                        point.setAttribute('role', 'img');
+                        point.setAttribute('aria-label', label);
+                        point.dataset.tooltip = label;
+                        point.dataset.pointKey = `${seriesIndex}-${index}`;
+                        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                        title.textContent = label;
+                        point.appendChild(title);
+
+                        const showTooltip = pin => {
+                            if (!tooltip) return;
+                            tooltip.textContent = point.dataset.tooltip;
+                            tooltip.classList.add('is-visible');
+                            if (pin) tooltip.dataset.pinned = point.dataset.pointKey;
+                        };
+                        point.addEventListener('pointerenter', () => showTooltip(false));
+                        point.addEventListener('pointerleave', () => {
+                            if (tooltip?.dataset.pinned) return;
+                            tooltip?.classList.remove('is-visible');
+                        });
+                        point.addEventListener('focus', () => showTooltip(false));
+                        point.addEventListener('blur', () => {
+                            if (tooltip?.dataset.pinned) return;
+                            tooltip?.classList.remove('is-visible');
+                        });
+                        point.addEventListener('click', event => {
+                            event.stopPropagation();
+                            if (!tooltip) return;
+                            if (tooltip.dataset.pinned === point.dataset.pointKey) {
+                                delete tooltip.dataset.pinned;
+                                tooltip.classList.remove('is-visible');
+                            } else {
+                                showTooltip(true);
+                            }
+                        });
+                        svg.appendChild(point);
+                    });
+                }
                 if (legend) {
                     const item = document.createElement('span');
                     item.className = 'chart-legend__item';
@@ -1258,6 +1353,18 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                     legend.appendChild(item);
                 }
             });
+            if (!compact) {
+                svg.onclick = event => {
+                    if (event.target !== svg || !tooltip) return;
+                    delete tooltip.dataset.pinned;
+                    tooltip.classList.remove('is-visible');
+                };
+                svg.onkeydown = event => {
+                    if (event.key !== 'Escape' || !tooltip) return;
+                    delete tooltip.dataset.pinned;
+                    tooltip.classList.remove('is-visible');
+                };
+            }
         };
 
         const buildRegistrationsTrend = () => {
@@ -1309,8 +1416,8 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 if (!year || !month) return;
                 const label = `${year} ${month}`;
                 const current = grouped.get(label) || { reev: 0, bev: 0 };
-                current.reev += parseNumericValue(row.cells[4]?.textContent || '0');
-                current.bev += parseNumericValue(row.cells[5]?.textContent || '0');
+                current.reev += parseNumericValue(row.dataset.reevMonthly || '0');
+                current.bev += parseNumericValue(row.dataset.bevMonthly || '0');
                 grouped.set(label, current);
             });
             const labels = [...grouped.keys()];
@@ -1332,8 +1439,8 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 if (!year || !month) return;
                 const label = `${year} ${month}`;
                 const current = grouped.get(label) || { elektro: 0, verbrenner: 0 };
-                current.elektro += parseNumericValue(row.cells[3]?.textContent || '0');
-                current.verbrenner += parseNumericValue(row.cells[4]?.textContent || '0');
+                current.elektro += parseNumericValue(row.dataset.elektroMonthly || '0');
+                current.verbrenner += parseNumericValue(row.dataset.verbrennerMonthly || '0');
                 grouped.set(label, current);
             });
             const labels = [...grouped.keys()];
