@@ -2451,6 +2451,14 @@
             const safeMax = maxValue > 0 ? maxValue * 1.2 : 1;
             const xFor = index => margin.left + (xLabels.length > 1 ? (index / (xLabels.length - 1)) * innerWidth : innerWidth / 2);
             const yFor = value => margin.top + innerHeight - (value / safeMax) * innerHeight;
+            const formatXAxisLabel = (label, level = 'full') => {
+                const [year, month] = String(label).split(' ');
+                if (!month) return label;
+                const shortMonth = month.slice(0, 3);
+                if (level === 'short') return `${shortMonth} ${year.slice(-2)}`;
+                if (level === 'medium') return `${month} ${year.slice(-2)}`;
+                return `${month} ${year}`;
+            };
 
             if (!compact) {
                 for (let tick = 0; tick <= 4; tick += 1) {
@@ -2468,11 +2476,15 @@
                     <line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#666" stroke-width="1" />
                 `);
 
+                const labelLevel = xLabels.length > 30 ? 'short' : xLabels.length > 12 ? 'medium' : 'full';
+                const step = Math.max(1, Math.ceil(xLabels.length / 12));
                 xLabels.forEach((label, index) => {
+                    if (index % step !== 0 && index !== xLabels.length - 1) return;
                     const x = xFor(index);
                     const y = height - margin.bottom + 18;
+                    const displayLabel = formatXAxisLabel(label, labelLevel);
                     svg.insertAdjacentHTML('beforeend', `
-                        <text x="${x}" y="${y}" transform="rotate(-45 ${x} ${y})" text-anchor="end" font-size="11" fill="#555">${label}</text>
+                        <text x="${x}" y="${y}" transform="rotate(-45 ${x} ${y})" text-anchor="end" font-size="11" fill="#555">${displayLabel}</text>
                     `);
                 });
             }
@@ -2487,55 +2499,56 @@
                 svg.insertAdjacentHTML('beforeend', `
                     <polyline fill="none" stroke="${color}" stroke-width="${compact ? 4 : 2.5}" points="${points}" />
                 `);
-                if (!compact) {
-                    series.values.forEach((value, index) => {
-                        const x = xFor(index);
-                        const y = yFor(value);
-                        const label = `${xLabels[index]}: ${series.name}, ${value.toLocaleString('de-DE')}`;
-                        const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                        point.setAttribute('cx', x);
-                        point.setAttribute('cy', y);
-                        point.setAttribute('r', '5');
-                        point.setAttribute('fill', color);
-                        point.setAttribute('class', 'chart-point');
-                        point.setAttribute('tabindex', '0');
-                        point.setAttribute('role', 'img');
-                        point.setAttribute('aria-label', label);
-                        point.dataset.tooltip = label;
-                        point.dataset.pointKey = `${seriesIndex}-${index}`;
-                        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-                        title.textContent = label;
-                        point.appendChild(title);
+                series.values.forEach((value, index) => {
+                    const x = xFor(index);
+                    const y = yFor(value);
+                    const totalForLabel = seriesList.reduce((sum, currentSeries) => sum + (Number(currentSeries.values[index]) || 0), 0);
+                    const sharePercent = totalForLabel > 0 ? (value / totalForLabel) * 100 : 0;
+                    const shareLabel = `${sharePercent.toFixed(1).replace('.', ',')}%`;
+                    const label = `${xLabels[index]}: ${series.name}, ${value.toLocaleString('de-DE')} (${shareLabel})`;
+                    const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    point.setAttribute('cx', x);
+                    point.setAttribute('cy', y);
+                    point.setAttribute('r', compact ? '3.5' : '5');
+                    point.setAttribute('fill', color);
+                    point.setAttribute('class', 'chart-point');
+                    point.setAttribute('tabindex', '0');
+                    point.setAttribute('role', 'img');
+                    point.setAttribute('aria-label', label);
+                    point.dataset.tooltip = label;
+                    point.dataset.pointKey = `${seriesIndex}-${index}`;
+                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    title.textContent = label;
+                    point.appendChild(title);
 
-                        const showTooltip = pin => {
-                            if (!tooltip) return;
-                            tooltip.textContent = point.dataset.tooltip;
-                            tooltip.classList.add('is-visible');
-                            if (pin) tooltip.dataset.pinned = point.dataset.pointKey;
-                        };
-                        point.addEventListener('pointerenter', () => showTooltip(false));
-                        point.addEventListener('pointerleave', () => {
-                            if (tooltip?.dataset.pinned) return;
-                            tooltip?.classList.remove('is-visible');
-                        });
-                        point.addEventListener('focus', () => showTooltip(false));
-                        point.addEventListener('blur', () => {
-                            if (tooltip?.dataset.pinned) return;
-                            tooltip?.classList.remove('is-visible');
-                        });
-                        point.addEventListener('click', event => {
-                            event.stopPropagation();
-                            if (!tooltip) return;
-                            if (tooltip.dataset.pinned === point.dataset.pointKey) {
-                                delete tooltip.dataset.pinned;
-                                tooltip.classList.remove('is-visible');
-                            } else {
-                                showTooltip(true);
-                            }
-                        });
-                        svg.appendChild(point);
+                    const showTooltip = pin => {
+                        if (!tooltip) return;
+                        tooltip.textContent = point.dataset.tooltip;
+                        tooltip.classList.add('is-visible');
+                        if (pin) tooltip.dataset.pinned = point.dataset.pointKey;
+                    };
+                    point.addEventListener('pointerenter', () => showTooltip(false));
+                    point.addEventListener('pointerleave', () => {
+                        if (tooltip?.dataset.pinned) return;
+                        tooltip?.classList.remove('is-visible');
                     });
-                }
+                    point.addEventListener('focus', () => showTooltip(false));
+                    point.addEventListener('blur', () => {
+                        if (tooltip?.dataset.pinned) return;
+                        tooltip?.classList.remove('is-visible');
+                    });
+                    point.addEventListener('click', event => {
+                        event.stopPropagation();
+                        if (!tooltip) return;
+                        if (tooltip.dataset.pinned === point.dataset.pointKey) {
+                            delete tooltip.dataset.pinned;
+                            tooltip.classList.remove('is-visible');
+                        } else {
+                            showTooltip(true);
+                        }
+                    });
+                    svg.appendChild(point);
+                });
                 if (legend) {
                     const item = document.createElement('span');
                     item.className = 'chart-legend__item';

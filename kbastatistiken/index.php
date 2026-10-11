@@ -9,13 +9,35 @@ const SAVE_PASSWORD_HASH_ENV = 'KBA_SAVE_PASSWORD_HASH';
 
 $error = null;
 $notice = null;
-$generatedHtml = isset($_SESSION['pending_html'])
-  ? $_SESSION['pending_html']
-  : (is_readable(OUTPUT_PATH)
-  ? file_get_contents(OUTPUT_PATH)
-  : (isset($_SESSION['generated_html']) ? $_SESSION['generated_html'] : ''));
-$generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
-$hasPendingHtml = isset($_SESSION['pending_html']);
+$pendingHtml = $_SESSION['pending_html'] ?? null;
+$pendingMtime = isset($_SESSION['pending_html_mtime']) ? (int) $_SESSION['pending_html_mtime'] : 0;
+$sessionGeneratedHtml = $_SESSION['generated_html'] ?? null;
+$sessionGeneratedMtime = isset($_SESSION['generated_html_mtime']) ? (int) $_SESSION['generated_html_mtime'] : 0;
+$savedHtml = is_readable(OUTPUT_PATH) ? file_get_contents(OUTPUT_PATH) : false;
+$savedHtml = $savedHtml === false ? '' : $savedHtml;
+$savedMtime = is_readable(OUTPUT_PATH) ? filemtime(OUTPUT_PATH) : 0;
+$generatedHtml = $savedHtml;
+$hasPendingHtml = false;
+
+if (is_string($pendingHtml) && $pendingHtml !== '') {
+  $generatedHtml = $pendingHtml;
+  $hasPendingHtml = true;
+  if ($savedMtime > $pendingMtime) {
+    $generatedHtml = $savedHtml;
+    $hasPendingHtml = false;
+  }
+} elseif (is_string($sessionGeneratedHtml) && $sessionGeneratedHtml !== '' && $savedMtime <= $sessionGeneratedMtime) {
+  $generatedHtml = $sessionGeneratedHtml;
+}
+
+if ($generatedHtml === '' && $savedHtml !== '') {
+  $generatedHtml = $savedHtml;
+}
+
+if ($generatedHtml !== '' && !isset($_SESSION['generated_html'])) {
+  $_SESSION['generated_html'] = $generatedHtml;
+  $_SESSION['generated_html_mtime'] = $savedMtime > 0 ? $savedMtime : time();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'download') {
   if (!$hasPendingHtml) {
@@ -34,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_POST['action'] ?? 'generate';
 
   if ($action === 'reset') {
-    unset($_SESSION['pending_html'], $_SESSION['generated_html']);
+    unset($_SESSION['pending_html'], $_SESSION['generated_html'], $_SESSION['pending_html_mtime'], $_SESSION['generated_html_mtime']);
     $generatedHtml = is_readable(OUTPUT_PATH) ? file_get_contents(OUTPUT_PATH) : '';
     $generatedHtml = $generatedHtml === false ? '' : $generatedHtml;
     $hasPendingHtml = false;
@@ -52,6 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Die erzeugte HTML-Datei konnte nicht gespeichert werden.';
     } else {
       $_SESSION['generated_html'] = $_SESSION['pending_html'];
+      $_SESSION['generated_html_mtime'] = time();
+      $_SESSION['pending_html_mtime'] = time();
       $generatedHtml = $_SESSION['generated_html'];
       unset($_SESSION['pending_html']);
       $hasPendingHtml = false;
@@ -91,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Die erzeugte HTML-Datei konnte nicht gelesen werden.';
           } else {
             $_SESSION['pending_html'] = $generatedHtml;
+            $_SESSION['pending_html_mtime'] = time();
             $hasPendingHtml = true;
             $notice = 'Die Statistik wurde erzeugt. Bitte bestätige das lokale Speichern.';
           }
