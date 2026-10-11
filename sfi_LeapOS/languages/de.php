@@ -30,6 +30,7 @@ return [
     'error.suggestion' => 'Bitte einen Vorschlag eingeben.',
     'error.submit' => 'Der Vorschlag konnte nicht gespeichert werden. Bitte die Schreibrechte prüfen.',
     'notice.submitted' => 'Der Vorschlag wurde eingetragen.',
+    'notice.translating' => 'Die Übersetzung dauert länger als erwartet. Bitte einen Moment Geduld; bis dahin wird der Originaltext angezeigt.',
     'overview' => 'Übersicht',
     'suggestions.recorded' => 'Erfasste Vorschläge',
     'entries' => 'Einträge',

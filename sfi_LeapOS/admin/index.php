@@ -94,7 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $item['category'] = $category;
                     $item['classification'] = $classification;
                     $item['suggestion'] = $suggestion;
-                    $item['translations'] = buildSuggestionTranslations($topic, $suggestion, $sourceLanguage);
+                    $item['translations'] = [];
+                    unset($item['language_checked']);
                     $item['status'] = ($item['status'] ?? 'erfasst') === 'erfasst' && $status === 'erfasst'
                         ? 'geprüft'
                         : $status;
@@ -152,6 +153,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
     </header>
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
+    <p class="message" data-translate-notice data-translate-url="../translate.php" role="status" hidden><?= e(t('notice.translating')) ?></p>
 
     <section class="admin-panel">
       <form id="selection-form" class="admin-actions" method="post">
@@ -199,7 +201,7 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
           <tbody>
           <?php if ($suggestions === []): ?><tr><td class="empty-state" colspan="7"><?= e(t('table.empty')) ?></td></tr>
           <?php else: foreach ($suggestions as $item): ?>
-            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-filter-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>">
+            <tr data-filter-row<?= needsTranslation($item, currentLanguage()) ? ' data-translate-id="' . e($item['id'] ?? '') . '"' : '' ?> data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-filter-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>">
               <td class="check-cell"><input form="selection-form" type="checkbox" name="ids[]" value="<?= e($item['id'] ?? '') ?>" data-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-model="<?= e($item['model'] ?? '') ?>" data-leapos-version="<?= e($item['leapos_version'] ?? UNKNOWN_LEAPOS_VERSION) ?>" data-category="<?= e($item['category'] ?? 'Sonstige') ?>" data-classification="<?= e($item['classification'] ?? 'Vorschlag') ?>" data-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>" data-status="<?= e($item['status'] ?? 'erfasst') ?>" aria-label="<?= e(t('table.selection')) ?>"></td>
               <td data-label="<?= e(t('table.number')) ?>"><?= e($item['number'] ?? '') ?></td>
               <td data-label="<?= e(t('table.created')) ?>"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
@@ -393,5 +395,6 @@ $availableLeapOsVersions = availableLeapOsVersions($suggestions);
       applyFilters();
     });
   </script>
+  <script src="../translate.js?v=<?= e((string) filemtime(__DIR__ . '/../translate.js')) ?>"></script>
 </body>
 </html>

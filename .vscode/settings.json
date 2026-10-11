@@ -25,7 +25,9 @@
                 "sfi_LeapOS/data/.htaccess",
                 "sfi_LeapOS/export/.htaccess",
                 "sfi_LeapOS/export/**",
-                "sfi_LeapOS/leapmotorwiki.ico"
+                "sfi_LeapOS/leapmotorwiki.ico",
+                "sfi_LeapOS/translate.js",
+                "sfi_LeapOS/translate.php"
             ]
         }
         ],

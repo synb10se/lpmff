@@ -28,18 +28,31 @@ function currentLanguage(): string
     return in_array($language, SUPPORTED_LANGUAGES, true) ? $language : 'de';
 }
 
-function translateTextForLanguage(string $text, string $sourceLanguage, string $targetLanguage): string
+// Returns null if the translation service failed or is unavailable.
+function translateTextForLanguage(string $text, string $sourceLanguage, string $targetLanguage): ?string
 {
     if ($text === '' || $sourceLanguage === $targetLanguage) {
         return $text;
     }
 
-    $endpoint = libreTranslateEndpoint();
-    if ($endpoint === '') {
-        return $text;
+    $decoded = libreTranslateRequest(libreTranslateEndpoint(), ['q' => [$text], 'source' => $sourceLanguage, 'target' => $targetLanguage, 'format' => 'text']);
+    $translations = is_array($decoded) ? ($decoded['translatedText'] ?? null) : null;
+    if (!is_array($translations) || $translations === []) {
+        return null;
     }
 
-    $payload = ['q' => [$text], 'source' => $sourceLanguage, 'target' => $targetLanguage, 'format' => 'text'];
+    $translated = trim((string) ($translations[0] ?? ''));
+    return $translated !== '' ? $translated : null;
+}
+
+// Returns the decoded JSON response or null on failure; after one failure no further requests are made per request.
+function libreTranslateRequest(string $endpoint, array $payload): ?array
+{
+    static $endpointFailed = false;
+    if ($endpoint === '' || $endpointFailed) {
+        return null;
+    }
+
     $requestBody = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
     $response = null;
@@ -50,8 +63,8 @@ function translateTextForLanguage(string $text, string $sourceLanguage, string $
             CURLOPT_POSTFIELDS => $requestBody,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => 15,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT => 25,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
         $curlResponse = curl_exec($curl);
@@ -66,44 +79,83 @@ function translateTextForLanguage(string $text, string $sourceLanguage, string $
                 'method' => 'POST',
                 'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
                 'content' => $requestBody,
-                'timeout' => 15,
+                'timeout' => 25,
                 'ignore_errors' => true,
             ],
         ]));
     }
 
     if (!is_string($response) || $response === '') {
-        return $text;
+        $endpointFailed = true;
+        return null;
     }
 
     try {
         $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
     } catch (JsonException) {
-        return $text;
+        return null;
     }
 
-    $translations = $decoded['translatedText'] ?? null;
-    if (!is_array($translations) || $translations === []) {
-        return $text;
-    }
-
-    $translated = trim((string) ($translations[0] ?? ''));
-    return $translated !== '' ? $translated : $text;
+    return is_array($decoded) ? $decoded : null;
 }
 
-function buildSuggestionTranslations(string $topic, string $suggestion, string $sourceLanguage): array
+// Returns a supported language code, or null if unknown or the service failed.
+function detectTextLanguage(string $text): ?string
 {
-    $translations = [];
-    foreach (SUPPORTED_LANGUAGES as $language) {
-        if ($language === $sourceLanguage) {
-            continue;
-        }
-        $translations[$language] = [
-            'topic' => translateTextForLanguage($topic, $sourceLanguage, $language),
-            'suggestion' => translateTextForLanguage($suggestion, $sourceLanguage, $language),
-        ];
+    $endpoint = preg_replace('#/translate/?$#', '/detect', libreTranslateEndpoint());
+    $decoded = libreTranslateRequest((string) $endpoint, ['q' => mb_substr($text, 0, 1000)]);
+    $language = is_array($decoded) ? ($decoded[0]['language'] ?? null) : null;
+    return is_string($language) && in_array($language, SUPPORTED_LANGUAGES, true) ? $language : null;
+}
+
+// Corrects source_language from the actual text and marks the item as checked; false if detection failed.
+function verifySourceLanguage(array &$item): bool
+{
+    if (!empty($item['language_checked'])) {
+        return true;
     }
-    return $translations;
+    $detected = detectTextLanguage(trim((string) ($item['topic'] ?? '') . ' ' . (string) ($item['suggestion'] ?? '')));
+    if ($detected === null) {
+        return false;
+    }
+    if ($detected !== itemSourceLanguage($item)) {
+        $item['source_language'] = $detected;
+        $item['translations'] = [];
+    }
+    $item['language_checked'] = true;
+    return true;
+}
+
+function itemSourceLanguage(array $item): string
+{
+    return is_string($item['source_language'] ?? null) && in_array($item['source_language'], SUPPORTED_LANGUAGES, true)
+        ? $item['source_language']
+        : 'de';
+}
+
+function needsTranslation(array $item, string $language): bool
+{
+    if (empty($item['language_checked'])) {
+        return true;
+    }
+    if ($language === itemSourceLanguage($item)) {
+        return false;
+    }
+    $stored = $item['translations'][$language] ?? null;
+    return !is_array($stored) || trim((string) ($stored['topic'] ?? '')) === '' || trim((string) ($stored['suggestion'] ?? '')) === '';
+}
+
+// Translates one item into $language and stores the result in $item; false on failure.
+function translateSuggestionItem(array &$item, string $language): bool
+{
+    $source = itemSourceLanguage($item);
+    $topic = translateTextForLanguage((string) ($item['topic'] ?? ''), $source, $language);
+    $suggestion = $topic === null ? null : translateTextForLanguage((string) ($item['suggestion'] ?? ''), $source, $language);
+    if ($topic === null || $suggestion === null) {
+        return false;
+    }
+    $item['translations'][$language] = ['topic' => $topic, 'suggestion' => $suggestion];
+    return true;
 }
 
 function suggestionTextForLanguage(array $item, string $field, ?string $language = null): string
@@ -124,13 +176,6 @@ function suggestionTextForLanguage(array $item, string $field, ?string $language
     $value = is_string($item[$field] ?? null) ? trim((string) $item[$field]) : '';
     if ($language === $sourceLanguage && $value !== '') {
         return $value;
-    }
-
-    if ($language !== $sourceLanguage) {
-        $translated = translateTextForLanguage($value !== '' ? $value : (string) ($item['topic'] ?? ''), $sourceLanguage, $language);
-        if ($translated !== '' && $translated !== $value) {
-            return $translated;
-        }
     }
 
     if ($value !== '') {

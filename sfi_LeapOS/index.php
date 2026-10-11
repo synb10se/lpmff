@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'classification' => $oldInput['classification'],
             'suggestion' => $oldInput['suggestion'],
             'status' => 'erfasst',
-            'translations' => buildSuggestionTranslations($oldInput['topic'], $oldInput['suggestion'], $sourceLanguage),
+            'translations' => [],
         ];
 
         if (saveSuggestions($suggestions)) {
@@ -88,6 +88,7 @@ $suggestions = array_reverse($allSuggestions);
 
     <?php if ($error !== null): ?><p class="message error"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== null): ?><p class="message success"><?= e($notice) ?></p><?php endif; ?>
+    <p class="message" data-translate-notice data-translate-url="translate.php" role="status" hidden><?= e(t('notice.translating')) ?></p>
 
     <details class="form-panel form-collapsible">
       <summary class="form-toggle"><span class="eyebrow"><?= e(t('entry.new')) ?></span><span class="toggle-icon" aria-hidden="true"></span></summary>
@@ -174,7 +175,7 @@ $suggestions = array_reverse($allSuggestions);
           <?php if ($suggestions === []): ?>
             <tr><td class="empty-state" colspan="6"><?= e(t('table.empty')) ?></td></tr>
           <?php else: foreach ($suggestions as $item): ?>
-            <tr data-filter-row data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-filter-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>">
+            <tr data-filter-row<?= needsTranslation($item, currentLanguage()) ? ' data-translate-id="' . e($item['id'] ?? '') . '"' : '' ?> data-filter-date="<?= e(substr((string) ($item['created_at'] ?? ''), 0, 10)) ?>" data-filter-status="<?= e($item['status'] ?? 'erfasst') ?>" data-filter-category="<?= e($item['category'] ?? '') ?>" data-filter-classification="<?= e($item['classification'] ?? '') ?>" data-filter-model="<?= e($item['model'] ?? '') ?>" data-filter-version="<?= e(displayLeapOsVersion($item['leapos_version'] ?? null)) ?>" data-filter-topic="<?= e(suggestionTextForLanguage($item, 'topic')) ?>" data-filter-suggestion="<?= e(suggestionTextForLanguage($item, 'suggestion')) ?>">
               <td data-label="<?= e(t('table.number')) ?>"><?= e($item['number'] ?? '') ?></td>
               <td data-label="<?= e(t('table.created')) ?>"><?= e(formatDate($item['created_at'] ?? '')) ?></td>
               <td data-label="Status"><div class="record-symbols"><span><?= renderSymbol('status', $item['status'] ?? 'erfasst') ?></span><span><?= renderSymbol('category', $item['category'] ?? 'Nicht angegeben') ?></span><span><?= renderSymbol('classification', $item['classification'] ?? 'Nicht angegeben') ?></span></div></td>
@@ -351,5 +352,6 @@ $suggestions = array_reverse($allSuggestions);
       applyFilters();
     });
   </script>
+  <script src="translate.js?v=<?= e((string) filemtime(__DIR__ . '/translate.js')) ?>"></script>
 </body>
 </html>

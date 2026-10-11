@@ -30,6 +30,7 @@ return [
     'error.suggestion' => 'Enter a suggestion.',
     'error.submit' => 'The suggestion could not be saved. Please check the file permissions.',
     'notice.submitted' => 'The suggestion has been submitted.',
+    'notice.translating' => 'The translation is taking longer than expected. Please wait a moment; the original text is shown until then.',
     'overview' => 'Overview',
     'suggestions.recorded' => 'Submitted suggestions',
     'entries' => 'entries',
