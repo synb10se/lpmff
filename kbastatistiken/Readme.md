@@ -1,90 +1,112 @@
-# Aufbereitung von KBA-Statistiken
-Statistische Daten zu den Neuzulassungen können direkt im [KBA-Statistikportal](https://experience.arcgis.com/experience/4fe31a1cadce449bb27045ca2fafb9d3) als CSV-Datei abgefragt werden. Dieses Projekt wandelt die CSV-Daten in eine interaktive HTML-Statistik um.
+# KBA-Statistiken
 
-## Umsetzung
-Da es keinen Automatismus für die Abfrage des Statistikportals gibt, werden die Daten manuell abgefragt, als CSV-Datei gespeichert und anschließend über das Webformular verarbeitet.
+Dieses Projekt verarbeitet KBA-CSV-Exporte aus dem KBA-Statistikportal und erzeugt daraus eine HTML-Statistik, die im Browser als Vorschau angezeigt und optional dauerhaft gespeichert werden kann.
 
-![Workflow-Darstellung KBA-Python-Webserver](doc/GitHub-Worflow.jpg)
+Die eigentliche Weboberfläche liegt in `index.php`. Sie übernimmt die CSV-Upload- und Speicherlogik und startet das Python-Skript `csv2html.py` mit temporären Dateien.
 
-Die Schritte sind:
-1. Gewünschte Daten aus dem KBA-Statistikportal extrahieren und lokal als CSV-Datei speichern.
-2. CSV-Datei über `index.php` hochladen und mit `csv2html.py` verarbeiten lassen.
-3. Erzeugte Statistik prüfen und das lokale Speichern ausdrücklich bestätigen.
+## Überblick
 
-## Dateien und ihre Verwendung
+Der typische Ablauf ist:
+
+1. CSV-Datei aus dem KBA-Statistikportal herunterladen und lokal speichern.
+2. CSV in `index.php` per Upload einreichen.
+3. `csv2html.py` erzeugt daraus eine HTML-Auswertung.
+4. Die Ausgabe wird im Browser als Vorschau in einem `iframe` angezeigt.
+5. Erst nach Passwortprüfung und Bestätigung wird die Datei `kba-statistiken.html` aktualisiert.
+
+## Dateien
 
 ### `index.php`
 
-`index.php` ist die Weboberfläche für die Verarbeitung:
+`index.php` ist die interaktive PHP-Oberfläche. Ihre tatsächlichen Funktionen sind:
 
-- nimmt eine KBA-CSV-Datei als Upload entgegen;
-- ruft `csv2html.py` über Python auf;
-- zeigt die neu erzeugte Statistik zunächst als Vorschau in einem iframe an;
-- überschreibt die lokale HTML-Datei erst nach Klick auf **Lokales Speichern bestätigen**;
-- verlangt vor dem Überschreiben zusätzlich das konfigurierte Speicherpasswort;
-- verwendet für die Sitzung einen temporären, noch nicht gespeicherten HTML-Inhalt.
+- CSV-Datei per Upload akzeptieren
+- mit `exec()` das Python-Skript ausführen
+- die erzeugte HTML-Ausgabe als Vorschau rendern
+- ein `download`-Link für das aktuelle, noch nicht gespeicherte Ergebnis anbieten
+- eine Vorschau nur nach erfolgreicher Verarbeitung anzeigen
+- die gespeicherte Ausgabe nur nach Eingabe des korrekten Passworts überschreiben
+- bei Bedarf den Zustand der Sitzung zurücksetzen
 
-`index.php` muss über einen PHP-Webserver aufgerufen werden, zum Beispiel über eine MAMP- oder Apache-Installation. Die Datei ist nicht die eigentliche Statistik und sollte nicht durch einen direkten Link als fertige Ausgabeseite verwendet werden.
+Wichtige Details:
 
-Die Vorschau im iframe nutzt den verfügbaren Bildschirmbereich und besitzt eine größere Mindesthöhe. Dadurch können die Tabs und Tabellen auch bei umfangreichen CSV-Ausgaben komfortabel gescrollt werden.
-
-### `kba-statistiken.html`
-
-`kba-statistiken.html` ist die dauerhaft gespeicherte, eigenständige Ausgabedatei. Sie kann direkt im Browser geöffnet, auf einem Webserver veröffentlicht oder im Forum/Wiki verlinkt werden. Für die Anzeige dieser Datei wird weder PHP noch Python benötigt.
-
-Die Datei wird nicht beim bloßen Generieren überschrieben. Erst die Bestätigung im `index.php`-Formular ersetzt die bisherige Version.
+- Es wird immer ein temporäres Input- und Outputfile für Python verwendet.
+- Die erzeugte HTML wird in der Session als `pending_html` gespeichert.
+- Die gespeicherte Datei `kba-statistiken.html` wird nur gelöscht/ersetzt, wenn `action=save` mit gültigem Passwort bestätigt wird.
+- Wenn kein aktuelles, ungespeichertes Ergebnis vorhanden ist, ist ein Download per `?action=download` nicht möglich.
 
 ### `csv2html.py`
 
-Das Python-Skript verarbeitet die CSV-Datei und erzeugt die HTML-Ausgabe. Es kann auch direkt über die Kommandozeile verwendet werden:
+Das Python-Skript erzeugt aus der CSV die HTML-Statistik. Es kann auch direkt über die Kommandozeile genutzt werden:
 
-```text
-python3 csv2html.py --input daten.csv --output kba-statistiken.html
+```bash
+python3 csv2html.py --input daten.csv --output kba-statistiken.html --quiet
 ```
 
-### PHP-Webseite installieren
+Die Ausgabe enthält die für dieses Projekt relevanten Tabellen, inklusive Jahres-/Monatsfilterung und einer HTML-Darstellung für die Browser-Vorschau.
 
-Für den PHP-Betrieb werden mindestens diese Dateien in das Webverzeichnis hochgeladen:
+### `kba-statistiken.html`
 
-- `index.php`
-- `csv2html.py`
+`kba-statistiken.html` ist die dauerhaft gespeicherte Ausgabedatei. Sie wird nicht bei jedem Upload überschrieben; sie bleibt erst dann auf dem aktuellen Stand, wenn im Formular in `index.php` das lokale Speichern bestätigt wurde.
 
-Der Webserver benötigt PHP mit aktivierter `exec()`-Funktion sowie Python 3.6.8 oder neuer. `index.php` ruft `csv2html.py` mit temporären Eingabe- und Ausgabedateien auf. Die CSV und die Zwischen-Ausgabe werden nach der Verarbeitung gelöscht. Die dauerhaft gespeicherte Datei heißt `kba-statistiken.html` und bleibt im selben Verzeichnis erhalten.
+Diese Datei kann direkt im Browser geöffnet, auf einem Webserver veröffentlicht oder im Wiki/Forum verlinkt werden. Für sie ist weder PHP noch Python erforderlich.
 
-Falls Python nicht unter `python3` erreichbar ist, in `index.php` die Konstante `PYTHON_BIN` an den Serverpfad anpassen, zum Beispiel:
+## Anforderungen
+
+Für den Betrieb wird ein PHP-Webserver mit aktivierter `exec()`-Funktion benötigt. Zusätzlich muss Python 3 verfügbar sein.
+
+Die PHP-Konstante `PYTHON_BIN` ist in `index.php` auf `python3` gesetzt:
+
+```php
+const PYTHON_BIN = 'python3';
+```
+
+Wenn Python an einem anderen Pfad liegt, muss dieser hier angepasst werden, zum Beispiel:
 
 ```php
 const PYTHON_BIN = '/usr/bin/python3';
 ```
 
-Für das lokale Speichern muss außerdem die Umgebungsvariable `KBA_SAVE_PASSWORD_HASH` gesetzt sein. Sie enthält einen mit PHP erzeugten Passwort-Hash, niemals das Klartextpasswort. Einen Hash erzeugt man zum Beispiel mit:
+## Passwortschutz für das Speichern
 
-```text
+Das lokale Speichern ist nur freigegeben, wenn die Umgebungsvariable `KBA_SAVE_PASSWORD_HASH` gesetzt ist. Sie enthält den PHP-Hash des Passworts, nicht das Klartextpasswort.
+
+Beispiel zur Erzeugung eines Hashes:
+
+```bash
 php -r "echo password_hash('GEHEIMES_PASSWORT', PASSWORD_DEFAULT), PHP_EOL;"
 ```
 
-Den ausgegebenen Hash als `KBA_SAVE_PASSWORD_HASH` in der PHP-/MAMP-Umgebung hinterlegen. Ohne korrekt gesetzten Hash oder bei einem falschen Passwort wird `kba-statistiken.html` nicht verändert. Die erzeugte Vorschau bleibt bis zu einem erfolgreichen Speichern in der Sitzung erhalten.
+Danach den resultierenden Hash als `KBA_SAVE_PASSWORD_HASH` in der Umgebung des PHP-Servers hinterlegen.
 
-Danach `index.php` über die Domain aufrufen, eine CSV-Datei auswählen und **Statistik erzeugen** anklicken. Die Vorschau kann zunächst geprüft werden. Erst **Lokales Speichern bestätigen** schreibt die neue Version in `kba-statistiken.html`.
+Ohne gültigen Hash oder mit falschem Passwort bleibt die gespeicherte Datei unverändert; die neue Vorschau bleibt in der Session erhalten, bis ein erfolgreicher Speichern-Schritt erfolgt.
 
-Die bisherigen Flask-Dateien und `requirements.txt` werden für die PHP-Variante nicht benötigt.
+## Benutzung im Browser
+
+1. `index.php` im Webbrowser aufrufen.
+2. Eine CSV-Datei auswählen.
+3. Auf `Statistik erzeugen` klicken.
+4. Die HTML-Auswertung erscheint als Vorschau im `iframe`.
+5. Wenn die Vorschau korrekt ist, das Password eingeben und auf `Lokales Speichern bestätigen` klicken.
+6. Damit wird `kba-statistiken.html` aktualisiert.
+
+Um die Vorschau nach einer fehlerhaften oder veralteten Ausgabe wieder auf den gespeicherten Stand zu setzen, kann über das Formular `Zurücksetzen` der aktuelle Zustand verworfen werden.
 
 ## Inhalt der Statistik
 
-Die Ausgabe enthält drei Tabs:
+Die generierte Seite enthält üblicherweise mehrere Tabs mit KBA-Analysen, zum Beispiel:
 
-1. **Neuzulassungen Leapmotor**
-	- enthält ausschließlich Datensätze mit der Marke `LEAPMOTOR`;
-	- zeigt die konfigurierten Modellreihen und ihre Antriebswerte;
-	- summiert die Gesamtzahl innerhalb jedes Jahres.
-2. **Marktvergleich Elektro- und Plug-in-Hybrid**
-	- fasst alle Marken je Monat zusammen;
-	- zeigt `Plug-in-Hybrid` und `Elektro (BEV)` sowie kumulierte Jahreswerte;
-	- hebt die Dezemberwerte der Anzahl relativ zur stärksten Marke mit fünf Farbstufen hervor.
-3. **Marktvergleich Verbrenner-Elektromobilität**
-	- fasst alle Marken und Modellreihen je Jahr und Monat zusammen;
-	- `Elektroantrieb` besteht aus `Plug-in-Hybrid` plus `Elektro (BEV)`;
-	- `Verbrennerantrieb` ist die verbleibende Anzahl;
-	- weist die Spitzenreiter beider Antriebsarten je Zeitraum aus.
+- Neuzulassungen für Leapmotor
+- Marktvergleich Elektro- und Plug-in-Hybrid
+- Marktvergleich Verbrenner vs. Elektromobilität
 
-Alle Tabellen besitzen eine Jahres- und Monatsauswahl. Die Auswahl gilt gleichzeitig für alle drei Tabs und bleibt beim Wechseln der Tabs erhalten. Mit **Gesamtanzeige** werden die Filter zurückgesetzt. Die Tabellenüberschriften und Spaltenköpfe bleiben beim Scrollen sichtbar; auf kleinen Bildschirmen werden die Tabs untereinander angeordnet.
+Die Tabellen sind mit Jahres- und Monatsfiltern ausgestattet; die Auswahl gilt für alle Tabs gleichzeitig. Über `Gesamtanzeige` können die Filter zurückgesetzt werden.
+
+Die Ausgabe ist für Browserdarstellung optimiert: Überschriften und Spaltenköpfe bleiben bei längeren Tabellen sichtbar, und auf kleineren Bildschirmen werden die Tabs vertikal angeordnet.
+
+## Wichtige Hinweise
+
+- `index.php` ist kein fertiges, direkt zu verlinkendes Statistik-HTML, sondern die Verwaltungsschnittstelle für die Erstellung.
+- Der eigentliche, für Besucher nutzbare Output ist `kba-statistiken.html`.
+- Die in `index.php` erzeugte Vorschau wird nur in der Session gehalten und ist kein dauerhaftes Dateisystem-Artifact.
+- Der Ablauf ist bewusst so gestaltet, dass erst nach manuellem Review und freigebender Bestätigung die gespeicherte Statistik aktualisiert wird.
