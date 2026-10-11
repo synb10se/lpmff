@@ -263,7 +263,7 @@ def generate_detail_table(data, column_mapping):
         <div class="stat-banner" data-panel="panel-market-electric" tabindex="0" role="button" aria-label="Marktvergleich Elektro- und Plug-in-Hybrid anzeigen">
             <div class="stat-banner__copy">
                 <div class="stat-banner__title">Marktvergleich Elektro- und Plug-in-Hybrid</div>
-                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+                <div class="stat-banner__meta">Filtern nach Jahr und Monat · Statistik durch Anklicken vergrössern</div>
             </div>
             <div class="chart-panel">
                 <h3>Trend pro Monat</h3>
@@ -455,7 +455,7 @@ def generate_market_comparison_table(data, column_mapping):
         <div class="stat-banner" data-panel="panel-market-comparison" tabindex="0" role="button" aria-label="Marktvergleich Verbrenner-Elektromobilität anzeigen">
             <div class="stat-banner__copy">
                 <div class="stat-banner__title">Marktvergleich Verbrenner-Elektromobilität</div>
-                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+                <div class="stat-banner__meta">Filtern nach Jahr und Monat · Statistik durch Anklicken vergrössern</div>
             </div>
             <div class="chart-panel">
                 <h3>Trend pro Monat</h3>
@@ -1037,7 +1037,7 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         <div class="stat-banner" data-panel="panel-registrations" tabindex="0" role="button" aria-label="Neuzulassungen Leapmotor anzeigen">
             <div class="stat-banner__copy">
                 <div class="stat-banner__title">Neuzulassungen Leapmotor</div>
-                <div class="stat-banner__meta">Filter in der Tabelle ändern · Grafik anklicken zum Vergrössern</div>
+                <div class="stat-banner__meta">Filtern nach Jahr und Monat · Statistik durch Anklicken vergrössern</div>
             </div>
             <div class="chart-panel">
                 <h3>Trend pro Modell und Monat</h3>
@@ -1264,6 +1264,12 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                 if (level === 'medium') return `${month} ${year.slice(-2)}`;
                 return `${month} ${year}`;
             };
+            const labelLevel = compact
+                ? (xLabels.length > 20 ? 'short' : xLabels.length > 10 ? 'medium' : 'full')
+                : (xLabels.length > 30 ? 'short' : xLabels.length > 12 ? 'medium' : 'full');
+            const step = compact
+                ? Math.max(1, Math.ceil(xLabels.length / 7))
+                : Math.max(1, Math.ceil(xLabels.length / 12));
 
             if (!compact) {
                 for (let tick = 0; tick <= 4; tick += 1) {
@@ -1280,19 +1286,20 @@ def generate_html(aggregated_data, target_models, detail_data=None,
                     <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" stroke="#666" stroke-width="1" />
                     <line x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" stroke="#666" stroke-width="1" />
                 `);
-
-                const labelLevel = xLabels.length > 30 ? 'short' : xLabels.length > 12 ? 'medium' : 'full';
-                const step = Math.max(1, Math.ceil(xLabels.length / 12));
-                xLabels.forEach((label, index) => {
-                    if (index % step !== 0 && index !== xLabels.length - 1) return;
-                    const x = xFor(index);
-                    const y = height - margin.bottom + 18;
-                    const displayLabel = formatXAxisLabel(label, labelLevel);
-                    svg.insertAdjacentHTML('beforeend', `
-                        <text x="${x}" y="${y}" transform="rotate(-45 ${x} ${y})" text-anchor="end" font-size="11" fill="#555">${displayLabel}</text>
-                    `);
-                });
             }
+
+            xLabels.forEach((label, index) => {
+                if (index % step !== 0 && index !== xLabels.length - 1) return;
+                const x = xFor(index);
+                const y = compact ? height - 10 : height - margin.bottom + 18;
+                const textAnchor = compact ? 'middle' : 'end';
+                const transform = compact ? '' : `transform="rotate(-45 ${x} ${y})"`;
+                const fontSize = compact ? 8 : 11;
+                const displayLabel = formatXAxisLabel(label, labelLevel);
+                svg.insertAdjacentHTML('beforeend', `
+                    <text x="${x}" y="${y}" ${transform} text-anchor="${textAnchor}" font-size="${fontSize}" fill="#555">${displayLabel}</text>
+                `);
+            });
 
             seriesList.forEach((series, seriesIndex) => {
                 const points = series.values.map((value, index) => {
