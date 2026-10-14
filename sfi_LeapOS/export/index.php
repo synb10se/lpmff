@@ -39,154 +39,7 @@ if (!$authenticated) {
     exit;
 }
 
-function translateLibreTranslateBatch(array $texts): ?array
-{
-    $endpoint = libreTranslateEndpoint();
-    $endpointParts = parse_url($endpoint);
-    if ($endpoint === '' || !is_array($endpointParts) || !in_array($endpointParts['scheme'] ?? '', ['http', 'https'], true) || !isset($endpointParts['host'])) {
-        return null;
-    }
-
-    $payload = ['q' => array_values($texts), 'source' => 'de', 'target' => 'en', 'format' => 'text'];
-    $apiKey = trim((string) (getenv('LIBRETRANSLATE_API_KEY') ?: ''));
-    if ($apiKey !== '') {
-        $payload['api_key'] = $apiKey;
-    }
-
-    try {
-        $requestBody = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-    } catch (JsonException) {
-        return null;
-    }
-
-    $response = null;
-    if (function_exists('curl_init')) {
-        $curl = curl_init($endpoint);
-        curl_setopt_array($curl, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $requestBody,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_SSL_VERIFYPEER => true,
-        ]);
-        $curlResponse = curl_exec($curl);
-        $httpStatus = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        curl_close($curl);
-        if (is_string($curlResponse) && $httpStatus >= 200 && $httpStatus < 300) {
-            $response = $curlResponse;
-        }
-    } else {
-        $response = @file_get_contents($endpoint, false, stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
-                'content' => $requestBody,
-                'timeout' => 15,
-                'ignore_errors' => true,
-            ],
-        ]));
-    }
-
-    if (!is_string($response) || $response === '') {
-        return null;
-    }
-
-    try {
-        $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-    } catch (JsonException) {
-        return null;
-    }
-
-    $translations = $decoded['translatedText'] ?? null;
-    if (is_string($translations) && count($texts) === 1) {
-        $translations = [$translations];
-    }
-    if (!is_array($translations) || count($translations) !== count($texts)) {
-        return null;
-    }
-
-    foreach ($translations as &$translation) {
-        if (!is_string($translation) || trim($translation) === '') {
-            return null;
-        }
-        $translation = trim($translation);
-    }
-    unset($translation);
-
-    return $translations;
-}
-
-function translateExportContents(array $texts): array
-{
-    $trimmedTexts = array_map(static fn (mixed $text): string => trim((string) $text), $texts);
-    $chunksByText = [];
-    $allChunks = [];
-
-    foreach ($trimmedTexts as $textIndex => $text) {
-        $sentences = preg_split('/(?<=[.!?])\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-        if ($sentences === false || $sentences === []) {
-            $sentences = $text === '' ? [] : [$text];
-        }
-
-        $chunks = [];
-        $current = '';
-        foreach ($sentences as $sentence) {
-            $candidate = $current === '' ? $sentence : $current . ' ' . $sentence;
-            if (mb_strlen($candidate) <= 500) {
-                $current = $candidate;
-                continue;
-            }
-            if ($current !== '') {
-                $chunks[] = $current;
-            }
-            $current = $sentence;
-        }
-        if ($current !== '') {
-            $chunks[] = $current;
-        }
-
-        $chunksByText[$textIndex] = [];
-        foreach ($chunks as $chunk) {
-            $chunksByText[$textIndex][] = count($allChunks);
-            $allChunks[] = $chunk;
-        }
-    }
-
-    if ($allChunks === []) {
-        return $trimmedTexts;
-    }
-    if (libreTranslateEndpoint() === '') {
-        $GLOBALS['export_translation_unavailable'] = true;
-        return $trimmedTexts;
-    }
-
-    $translatedChunks = [];
-    foreach (array_chunk($allChunks, 10) as $batch) {
-        $translations = translateLibreTranslateBatch($batch);
-        if ($translations === null) {
-            $GLOBALS['export_translation_unavailable'] = true;
-            $translations = $batch;
-        }
-        array_push($translatedChunks, ...$translations);
-    }
-
-    $translatedTexts = [];
-    foreach ($chunksByText as $textIndex => $chunkIndexes) {
-        $parts = array_map(static fn (int $chunkIndex): string => $translatedChunks[$chunkIndex], $chunkIndexes);
-        $translatedTexts[$textIndex] = trim(implode(' ', $parts));
-    }
-
-    return $translatedTexts;
-}
-
-function translateExportContent(string $text): string
-{
-    return translateExportContents([$text])[0] ?? '';
-}
-
-function exportRowForDisplay(array $item, ?array $translatedContent = null): array
+function exportRowForDisplay(array $item, array $translatedContent): array
 {
     static $englishCatalogue = null;
     $englishCatalogue ??= require dirname(__DIR__) . '/languages/en.php';
@@ -196,30 +49,44 @@ function exportRowForDisplay(array $item, ?array $translatedContent = null): arr
 
     return [
         'number' => (string) ($item['number'] ?? ''),
-        'topic' => $translatedContent[0] ?? translateExportContent((string) ($item['topic'] ?? '')),
+        'topic' => $translatedContent[0],
         'model' => ($item['model'] ?? '') === '' || ($item['model'] ?? '') === ALL_MODELS ? 'all' : (string) $item['model'],
         'leapos_version' => in_array($version, [UNKNOWN_LEAPOS_VERSION, LEGACY_UNKNOWN_LEAPOS_VERSION], true) ? $englishCatalogue['version.all'] : $version,
         'category' => $category === '' ? 'Not specified' : ($englishCatalogue['value.' . $category] ?? 'Not specified'),
         'classification' => $classification === '' ? 'Not specified' : ($englishCatalogue['value.' . $classification] ?? 'Not specified'),
-        'suggestion' => $translatedContent[1] ?? translateExportContent((string) ($item['suggestion'] ?? '')),
+        'suggestion' => $translatedContent[1],
     ];
 }
 
 function exportRowsForDisplay(array $items): array
 {
-    $freeText = [];
-    foreach ($items as $item) {
-        $freeText[] = (string) ($item['topic'] ?? '');
-        $freeText[] = (string) ($item['suggestion'] ?? '');
-    }
-    $translatedText = translateExportContents($freeText);
-
+    $updated = [];
     $displayRows = [];
-    foreach ($items as $index => $item) {
-        $displayRows[] = ['id' => $item['id'] ?? ''] + exportRowForDisplay($item, [
-            $translatedText[$index * 2] ?? '',
-            $translatedText[$index * 2 + 1] ?? '',
-        ]);
+    foreach ($items as $item) {
+        $original = $item;
+        // Translations are stored per item; only missing ones hit the service, and only once.
+        $ready = !needsTranslation($item, 'en') || (verifySourceLanguage($item) && (!needsTranslation($item, 'en') || translateSuggestionItem($item, 'en')));
+        if (!$ready) {
+            $GLOBALS['export_translation_unavailable'] = true;
+        } elseif ($item !== $original) {
+            $updated[(string) ($item['id'] ?? '')] = $item;
+        }
+        $english = $ready ? [suggestionTextForLanguage($item, 'topic', 'en'), suggestionTextForLanguage($item, 'suggestion', 'en')] : [(string) ($item['topic'] ?? ''), (string) ($item['suggestion'] ?? '')];
+        $displayRows[] = ['id' => $item['id'] ?? ''] + exportRowForDisplay($item, $english);
+    }
+
+    if ($updated !== []) {
+        $all = loadSuggestions();
+        foreach ($all as &$entry) {
+            $new = $updated[(string) ($entry['id'] ?? '')] ?? null;
+            if ($new !== null && ($entry['topic'] ?? '') === ($new['topic'] ?? '') && ($entry['suggestion'] ?? '') === ($new['suggestion'] ?? '')) {
+                $entry['source_language'] = $new['source_language'];
+                $entry['language_checked'] = true;
+                $entry['translations'] = $new['translations'] ?? [];
+            }
+        }
+        unset($entry);
+        saveSuggestions($all);
     }
 
     return $displayRows;
@@ -457,7 +324,7 @@ XML
 }
 
 $items = array_values(array_filter(loadSuggestions(), static fn (array $item): bool => ($item['status'] ?? '') === 'geprüft'));
-$GLOBALS['export_translation_unavailable'] = libreTranslateEndpoint() === '';
+$GLOBALS['export_translation_unavailable'] = false;
 $displayItems = exportRowsForDisplay($items);
 ?>
 <!DOCTYPE html>
