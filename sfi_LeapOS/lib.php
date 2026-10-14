@@ -53,6 +53,10 @@ function libreTranslateRequest(string $endpoint, array $payload): ?array
         return null;
     }
 
+    $apiKey = trim((string) (getenv('LIBRETRANSLATE_API_KEY') ?: ''));
+    if ($apiKey !== '') {
+        $payload['api_key'] = $apiKey;
+    }
     $requestBody = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
     $response = null;
@@ -69,9 +73,11 @@ function libreTranslateRequest(string $endpoint, array $payload): ?array
         ]);
         $curlResponse = curl_exec($curl);
         $httpStatus = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $GLOBALS['translate_error'] = 'HTTP ' . $httpStatus . ' ' . curl_error($curl) . ' ' . (is_string($curlResponse) ? mb_substr($curlResponse, 0, 200) : '');
         curl_close($curl);
         if (is_string($curlResponse) && $httpStatus >= 200 && $httpStatus < 300) {
             $response = $curlResponse;
+            $GLOBALS['translate_error'] = null;
         }
     } else {
         $response = @file_get_contents($endpoint, false, stream_context_create([

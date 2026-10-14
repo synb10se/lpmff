@@ -31,7 +31,9 @@ if ($item === null) {
 }
 
 if (!verifySourceLanguage($item)) {
-    $fail(502);
+    http_response_code(502);
+    echo json_encode(['ok' => false, 'error' => $GLOBALS['translate_error'] ?? 'detect failed']);
+    exit;
 }
 
 $translated = !needsTranslation($item, $language) || translateSuggestionItem($item, $language);
@@ -51,7 +53,9 @@ unset($entry);
 saveSuggestions($all);
 
 if (!$translated) {
-    $fail(502);
+    http_response_code(502);
+    echo json_encode(['ok' => false, 'error' => $GLOBALS['translate_error'] ?? 'translate failed']);
+    exit;
 }
 
 echo json_encode([

@@ -36,12 +36,14 @@
         body: new URLSearchParams({ id: row.dataset.translateId }),
         credentials: 'same-origin',
       });
-      const data = response.ok ? await response.json() : null;
+      const data = await response.json().catch(() => null);
       if (data && data.ok) {
         setText(row.querySelector('[data-field="topic"]'), data.topic);
         setText(row.querySelector('[data-field="suggestion"]'), data.suggestion);
         row.dataset.filterTopic = data.topic;
         row.dataset.filterSuggestion = data.suggestion;
+      } else {
+        console.warn('Translation failed', response.status, data && data.error);
       }
     } catch (error) {
       // Original text stays visible.
