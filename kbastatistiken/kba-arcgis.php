@@ -63,11 +63,12 @@ function kba_get(string $path, array $params): array
 }
 
 /**
- * Mehrere Abfragen parallel ausführen. Liefert die Antworten in Reihenfolge der URLs.
+ * Mehrere Abfragen parallel ausführen. Jede Antwort wird in Reihenfolge der URLs
+ * an $onPage übergeben und danach verworfen, damit nie alle Seiten gleichzeitig
+ * im Speicher liegen.
  */
-function kba_get_parallel(array $urls): array
+function kba_get_parallel(array $urls, callable $onPage): void
 {
-  $results = [];
   foreach (array_chunk($urls, KBA_PARALLEL, true) as $chunk) {
     $multi = curl_multi_init();
     $handles = [];
@@ -88,15 +89,16 @@ function kba_get_parallel(array $urls): array
       }
     } while ($running && $status === CURLM_OK);
 
+    ksort($handles);
     foreach ($handles as $index => $ch) {
-      $results[$index] = kba_decode(curl_multi_getcontent($ch), $chunk[$index]);
+      $page = kba_decode(curl_multi_getcontent($ch), $chunk[$index]);
       curl_multi_remove_handle($multi, $ch);
       curl_close($ch);
+      $onPage($page);
+      unset($page);
     }
     curl_multi_close($multi);
   }
-  ksort($results);
-  return $results;
 }
 
 /**
@@ -147,7 +149,6 @@ function kba_fetch_csv(string $csvPath): array
       'returnGeometry' => 'false',
     ]);
   }
-  $pages = kba_get_parallel($urls);
 
   // CSV schreiben
   $out = fopen($csvPath, 'w');
@@ -157,7 +158,7 @@ function kba_fetch_csv(string $csvPath): array
   fwrite($out, "\xEF\xBB\xBF");
   fputcsv($out, array_values($fields), ',', '"', '');
   $rows = 0;
-  foreach ($pages as $page) {
+  kba_get_parallel($urls, function (array $page) use ($out, $fields, &$rows): void {
     foreach ($page['features'] ?? [] as $feature) {
       $row = [];
       foreach (array_keys($fields) as $name) {
@@ -166,7 +167,7 @@ function kba_fetch_csv(string $csvPath): array
       fputcsv($out, $row, ',', '"', '');
       $rows++;
     }
-  }
+  });
   fclose($out);
 
   if ($rows !== $count) {
