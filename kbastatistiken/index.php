@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require __DIR__ . '/kba-arcgis.php';
+
 const PYTHON_BIN = 'python3';
 const SCRIPT_PATH = __DIR__ . '/csv2html.py';
 const OUTPUT_FILENAME = 'kba-statistiken.html';
@@ -90,19 +92,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $notice = 'Die Statistik wurde als ' . OUTPUT_FILENAME . ' gespeichert.';
     }
   } else {
-    if (!isset($_FILES['file1']) || $_FILES['file1']['error'] !== UPLOAD_ERR_OK) {
-      $error = 'Bitte eine CSV-Datei auswählen.';
-    } elseif (!is_uploaded_file($_FILES['file1']['tmp_name'])) {
-      $error = 'Die CSV-Datei konnte nicht geprüft werden.';
-    } else {
-      $temporaryInput = tempnam(sys_get_temp_dir(), 'kba-input-');
-      $temporaryOutput = tempnam(sys_get_temp_dir(), 'kba-output-');
+    @set_time_limit(180);
+    $temporaryInput = tempnam(sys_get_temp_dir(), 'kba-input-');
+    $temporaryOutput = tempnam(sys_get_temp_dir(), 'kba-output-');
 
-      if ($temporaryInput === false || $temporaryOutput === false) {
-        $error = 'Temporäre Dateien konnten nicht angelegt werden.';
-      } elseif (!move_uploaded_file($_FILES['file1']['tmp_name'], $temporaryInput)) {
-        $error = 'Die CSV-Datei konnte nicht gespeichert werden.';
-      } else {
+    if ($temporaryInput === false || $temporaryOutput === false) {
+      $error = 'Temporäre Dateien konnten nicht angelegt werden.';
+    } else {
+      try {
+        $fetchResult = kba_fetch_csv($temporaryInput);
+      } catch (Throwable $exception) {
+        $fetchResult = null;
+        $error = 'Die Daten konnten nicht vom KBA geladen werden. ' . $exception->getMessage();
+      }
+
+      if ($fetchResult !== null) {
         $command = implode(' ', [
           escapeshellarg(PYTHON_BIN),
           escapeshellarg(SCRIPT_PATH),
@@ -125,17 +129,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['pending_html'] = $generatedHtml;
             $_SESSION['pending_html_mtime'] = time();
             $hasPendingHtml = true;
-            $notice = 'Die Statistik wurde erzeugt. Bitte bestätige das lokale Speichern.';
+            $notice = sprintf(
+              'Die Statistik wurde mit %s Datensätzen erzeugt (Datenstand: %s). Bitte bestätige das lokale Speichern.',
+              number_format($fetchResult['rows'], 0, ',', '.'),
+              $fetchResult['stand']
+            );
           }
         }
       }
+    }
 
-      if ($temporaryInput !== false && is_file($temporaryInput)) {
-        unlink($temporaryInput);
-      }
-      if ($temporaryOutput !== false && is_file($temporaryOutput)) {
-        unlink($temporaryOutput);
-      }
+    if ($temporaryInput !== false && is_file($temporaryInput)) {
+      unlink($temporaryInput);
+    }
+    if ($temporaryOutput !== false && is_file($temporaryOutput)) {
+      unlink($temporaryOutput);
     }
   }
 }
@@ -226,11 +234,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p class="notice"><?= htmlspecialchars($notice, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
   <?php endif; ?>
   <div class="action-row">
-    <form action="" method="post" enctype="multipart/form-data">
+    <form action="" method="post" onsubmit="var b=this.querySelector('button');b.disabled=true;b.textContent='Daten werden vom KBA geladen …';">
       <input type="hidden" name="action" value="generate">
-      <label for="file1">KBA-CSV-Datei:</label>
-      <input id="file1" type="file" name="file1" accept=".csv,text/csv" required>
-      <button type="submit" title="CSV-Datei verarbeiten und eine neue Statistik erzeugen">Statistik erzeugen</button>
+      <button type="submit" title="Aktuelle Daten vom KBA laden und eine neue Statistik erzeugen">Statistik erzeugen</button>
     </form>
     <?php if ($hasPendingHtml): ?>
       <form action="" method="get">
