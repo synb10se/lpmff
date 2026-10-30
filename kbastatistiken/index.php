@@ -158,12 +158,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+      padding-bottom: 28px;
       background: #f5f5f5;
     }
     form, .result {
       background: #fff;
       padding: 16px;
       margin-bottom: 20px;
+    }
+    .result {
+      margin-bottom: 0;
     }
     .action-row {
       display: flex;
@@ -180,7 +184,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       gap: 16px;
     }
     .page-footer {
-      margin-top: 48px;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 4px 0;
+      background: #f5f5f5;
+      border-top: 1px solid #ddd;
       text-align: center;
       font-size: .85rem;
     }

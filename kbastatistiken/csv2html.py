@@ -576,6 +576,7 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            padding-bottom: 28px;
             background-color: #f5f5f5;
         }
         .tab-layout {
@@ -1025,9 +1026,16 @@ def generate_html(aggregated_data, target_models, detail_data=None,
             }
         }
         .page-footer {
-            margin-top: 48px;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 4px 0;
+            background: #f5f5f5;
+            border-top: 1px solid #ddd;
             text-align: center;
             font-size: .85rem;
+            z-index: 5;
         }
         .page-footer a {
             color: #555;

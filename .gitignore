@@ -2,3 +2,4 @@
 kbastatistiken/__pycache__/**
 kbastatistiken/.htaccess
 sfi_LeapOS/.htpasswd
+.vscode

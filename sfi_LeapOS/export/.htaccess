@@ -1,0 +1,3 @@
+# Die reine Passwortabfrage erfolgt in index.php.
+# Die .htpasswd-Datei bleibt außerhalb des Webverzeichnisses.
+Require all granted
