@@ -1089,6 +1089,15 @@ def generate_html(aggregated_data, target_models, detail_data=None,
         'C10': {'colspan': 4, 'has_sub': True},
         'T03': {'colspan': 1, 'has_sub': True}
     }
+    model_totals = {model: Decimal('0') for model in target_models}
+    for model_data in aggregated_data.values():
+        for model in target_models:
+            value = model_data.get(model, {}).get('gesamt', '').replace('.', '').replace(',', '.')
+            if value and value != '-':
+                try:
+                    model_totals[model] += Decimal(value)
+                except InvalidOperation:
+                    continue
     
     for model in target_models:
         config = model_configs.get(model, {'colspan': 1, 'has_sub': False})
@@ -1102,22 +1111,23 @@ def generate_html(aggregated_data, target_models, detail_data=None,
     # Zweite Zeile der Kopfzeilen (Unterkolumnen)
     for model in target_models:
         config = model_configs.get(model, {'colspan': 1, 'has_sub': False})
+        total_label = f'gesamt ({model_totals[model]:,.0f}'.replace(',', '.') + ')'
         
         if model == 'B03X':
-            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">{total_label}</th>\n'
         elif model == 'B05':
-            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">{total_label}</th>\n'
         elif model == 'B10':
-            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">{total_label}</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
             html += f'                    <th class="group-{model} header-level-2">REEV</th>\n'
         elif model == 'C10':
-            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">{total_label}</th>\n'
             html += f'                    <th class="group-{model} header-level-2">AWD</th>\n'
             html += f'                    <th class="group-{model} header-level-2">BEV</th>\n'
             html += f'                    <th class="group-{model} header-level-2">REEV</th>\n'
         elif model == 'T03':
-            html += f'                    <th class="group-{model} header-level-2">gesamt</th>\n'
+            html += f'                    <th class="group-{model} header-level-2">{total_label}</th>\n'
     
     html += '''                </tr>
             </thead>
