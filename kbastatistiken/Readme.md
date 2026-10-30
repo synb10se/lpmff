@@ -68,7 +68,7 @@ Das Python-Skript erzeugt aus der CSV die HTML-Statistik. Es kann auch direkt ü
 python3 csv2html.py --input daten.csv --output kba-statistiken.html --quiet
 ```
 
-Die Ausgabe enthält die für dieses Projekt relevanten Tabellen, inklusive Jahres-/Monatsfilterung und einer HTML-Darstellung für die Browser-Vorschau.
+Die Ausgabe enthält die für dieses Projekt relevanten Tabellen, inklusive Jahres-/Monatsfilterung und einer HTML-Darstellung für die Browser-Vorschau. In der Leapmotor-Neuzulassungstabelle zeigen die `gesamt`-Spaltenköpfe zusätzlich die Summe je Modell über alle in der erzeugten Statistik enthaltenen Berichtsmonate. Die Summen sind unabhängig von der aktuellen Jahres- und Monatsfilterung und ändern sich daher beim Filtern nicht.
 
 ### `kba-statistiken.html`
 
