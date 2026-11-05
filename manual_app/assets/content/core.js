@@ -14,7 +14,7 @@
   const wiki = {
     groups: [],
     pages: {},
-    disclaimer: 'Inoffizielle Kurzanleitung zur Leapmotor App 1.16 (iOS-Oberfläche). Verbindlich sind die Angaben von Leapmotor.'
+    disclaimer: 'Inoffizielle Kurzanleitung zur Leapmotor App 1.18.2 (iOS). Verbindlich sind die Angaben von Leapmotor.'
   };
 
   // Artikel registrieren: html erhält die Hilfsfunktionen (fig, path, warn, caution, info, tip, card).
