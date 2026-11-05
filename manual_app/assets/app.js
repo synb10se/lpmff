@@ -28,8 +28,26 @@
     const p = W.pages[page];
     const i = order.indexOf(page);
     const prev = order[i - 1], next = order[i + 1];
+    // Jeder Abschnitt (ab <h2>, bei Bildern auch ab <h3>) bildet einen eigenen Container, damit Bilder bei ihrem Text bleiben.
+    // Breite Ansicht: Bilder direkt unter die Überschrift, damit sie oben bündig neben dem Text stehen.
+    const wide = matchMedia('(min-width: 821px)').matches;
+    const figRe = /<figure>[\s\S]*?<\/figure>/g;
+    const block = (s, cls) => {
+      if (wide) {
+        const figs = s.match(figRe) || [];
+        const rest = s.replace(figRe, '');
+        const h = rest.match(/^<h[23][\s\S]*?<\/h[23]>/);
+        s = h ? h[0] + figs.join('') + rest.slice(h[0].length) : figs.join('') + rest;
+      }
+      return `<section class="${cls}">${s}</section>`;
+    };
+    const sections = p.html.split(/(?=<h2[\s>])/).map((s) =>
+      s.includes('<figure>') && s.includes('<h3')
+        ? s.split(/(?=<h3[\s>])/).map((part, k) => block(part, k ? 'sec sub' : 'sec')).join('')
+        : block(s, 'sec')
+    ).join('');
     content.innerHTML =
-      `<div class="crumb">${p.group}</div><h1>${p.title}</h1>${p.html}` +
+      `<div class="crumb">${p.group}</div><h1>${p.title}</h1>${sections}` +
       `<div class="pager"><span>${prev ? `<a href="#/${prev}">← ${W.pages[prev].title}</a>` : ''}</span>` +
       `<span>${next ? `<a href="#/${next}">${W.pages[next].title} →</a>` : ''}</span></div>` +
       `<p class="footer-note">${W.disclaimer} <a href="#/impressum">Impressum</a></p>`;
@@ -118,5 +136,6 @@
 
   buildNav();
   window.addEventListener('hashchange', route);
+  matchMedia('(min-width: 821px)').addEventListener('change', route);
   route();
 })();

@@ -1,0 +1,8 @@
+/* Desktop/Laptop: Bilder rechts, Text umfließt sie; gleiche Breite = gleicher Maßstab */
+@media (min-width: 821px) {
+  figure { float: right; clear: right; width: clamp(220px, 22vw, 380px); margin: 4px 0 20px 32px; }
+  figure img { width: 100%; height: auto; max-height: none; }
+  .content h2, .content .callout { overflow: hidden; }
+  .content .callout { display: flow-root; }
+  .pager { clear: both; }
+}

@@ -5,7 +5,7 @@ WikiKit.add({
   keywords: 'bluetooth schlüssel annäherung entriegeln verriegeln erfassungsbereich fehlerdiagnose fahrzeugschlüssel teilen freunde gemeinsames mitglied home assistant abrp',
   html: ({ fig, path, info, warn, tip }) => `
 <h2>Bluetooth-Schlüssel</h2>
-<p>Die Karte „Bluetooth-Schlüssel“ auf „Mein Fahrzeug“ aktiviert und konfiguriert die Annäherungsfunktion.</p>
+<p>Die Karte „Bluetooth-Schlüssel“ auf „Mein Fahrzeug“ aktiviert und konfiguriert die Annäherungsfunktion zum Öffnen bzw. Schliessen des Fahrzeugs.</p>
 ${fig('meinfahrzeug-bluetooth-schluessel', 'Bluetooth-Schlüssel')}
 <h3>Entriegelungs- und Verriegelungsmethoden</h3>
 <ul>

@@ -1,0 +1,108 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Leapmotor App Kurzanleitung" [ref=e3] [cursor=pointer]:
+      - /url: "#/start"
+    - searchbox "Suche" [ref=e5]
+    - button "Hell/Dunkel umschalten" [ref=e6] [cursor=pointer]: ◐
+  - generic [ref=e7]:
+    - navigation "Menü" [ref=e8]:
+      - heading "Einstieg" [level=3] [ref=e9]
+      - link "Willkommen" [ref=e10] [cursor=pointer]:
+        - /url: "#/start"
+      - link "Fahrzeug einrichten" [ref=e11] [cursor=pointer]:
+        - /url: "#/einrichtung"
+      - heading "Mein Fahrzeug" [level=3] [ref=e12]
+      - link "Übersicht" [ref=e13] [cursor=pointer]:
+        - /url: "#/fahrzeug"
+      - link "Laden" [ref=e14] [cursor=pointer]:
+        - /url: "#/laden"
+      - link "Klima & Vorbereitung" [ref=e15] [cursor=pointer]:
+        - /url: "#/klima"
+      - link "Schlüssel & Teilen" [ref=e16] [cursor=pointer]:
+        - /url: "#/schluessel"
+      - link "Energieverbrauch" [ref=e17] [cursor=pointer]:
+        - /url: "#/energie"
+      - heading "Persönliches Zentrum" [level=3] [ref=e18]
+      - link "Persönliches Zentrum" [ref=e19] [cursor=pointer]:
+        - /url: "#/zentrum"
+      - link "App-Einstellungen" [ref=e20] [cursor=pointer]:
+        - /url: "#/einstellungen"
+      - heading "Rechtliches" [level=3] [ref=e21]
+      - link "Impressum" [ref=e22] [cursor=pointer]:
+        - /url: "#/impressum"
+    - main [ref=e23]:
+      - generic [ref=e24]: Mein Fahrzeug
+      - heading "Übersicht" [level=1] [ref=e25]
+      - paragraph [ref=e26]: Nach dem Öffnen der App zeigt „Mein Fahrzeug“ die Hauptfunktionen. Hersteller und Community empfehlen, die App ständig geöffnet zu lassen.
+      - figure "Übersicht „Mein Fahrzeug“" [ref=e27]:
+        - img "Übersicht „Mein Fahrzeug“" [ref=e28]
+      - list [ref=e30]:
+        - listitem [ref=e31]:
+          - text: "Kopfzeile: Fahrzeugname, Zeit der letzten Aktualisierung (Statusupdate), Verriegelungsstatus und rechts das Herzsymbol für den"
+          - link "Fahrzeugzustand" [ref=e32] [cursor=pointer]:
+            - /url: "#/fahrzeug"
+          - text: (Heartbeat).
+        - listitem [ref=e33]: Reichweite und Restladedauer, darunter individuell konfigurierbare Funktionstasten z.B. für Kofferraum, Fenster, Sonnenblende und Fahrzeug per Hupe orten (je nach Ausstattung).
+        - listitem [ref=e34]:
+          - text: "Ladekarte: Ladestand, Ladelimit, Ladeart und Restzeit, siehe"
+          - link "Laden" [ref=e35] [cursor=pointer]:
+            - /url: "#/laden"
+          - text: .
+        - listitem [ref=e36]:
+          - text: "Innentemperatur: siehe"
+          - link "Klima" [ref=e37] [cursor=pointer]:
+            - /url: "#/klima"
+          - text: .
+        - listitem [ref=e38]:
+          - text: Bluetooth-Schlüssel mit Status, siehe
+          - link "Schlüssel" [ref=e39] [cursor=pointer]:
+            - /url: "#/schluessel"
+          - text: .
+        - listitem [ref=e40]: Fahrzeugstandort (GPS, Kartenausschnitt) mit Hupen-Taste.
+        - listitem [ref=e41]:
+          - text: Fahrzeugvorbereitung per Fingerdruck, siehe
+          - link "Klima" [ref=e42] [cursor=pointer]:
+            - /url: "#/klima"
+          - text: .
+        - listitem [ref=e43]:
+          - text: "Energieverbrauch anzeigen: siehe"
+          - link "Energieverbrauch" [ref=e44] [cursor=pointer]:
+            - /url: "#/energie"
+          - text: .
+      - generic [ref=e45]:
+        - generic [ref=e46]: Hinweis
+        - text: Auf der unteren Leiste kann zwischen „Mein Fahrzeug“ und dem
+        - link "Persönlichen Zentrum" [ref=e47] [cursor=pointer]:
+          - /url: "#/zentrum"
+        - text: gewechselt werden.
+      - heading "Fahrzeugzustand" [level=2] [ref=e48]
+      - paragraph [ref=e49]: Das Herzsymbol oben rechts öffnet den Fahrzeugzustand, momentan nur mit dem Reifendruck aller vier Räder (kPa und bar).
+      - figure "Fahrzeugzustand mit Reifendruck" [ref=e50]:
+        - img "Fahrzeugzustand mit Reifendruck" [ref=e51]
+      - heading "Fahrzeugstandort" [level=2] [ref=e53]
+      - paragraph [ref=e54]: Die Karte zeigt die Position des Fahrzeugs, die Entfernung dorthin und eine Navigationstaste. Mit „Hupen“ lässt sich das Fahrzeug akustisch orten. Die Standortfreigabe der App muss dafür aktiv sein.
+      - figure "Fahrzeugstandort mit Suche und Hupen-Taste" [ref=e55]:
+        - img "Fahrzeugstandort mit Suche und Hupen-Taste" [ref=e56]
+      - heading "Nachrichtenzentrum" [level=2] [ref=e58]
+      - paragraph [ref=e59]:
+        - text: Das Sprechblasen-Symbol oben rechts im
+        - link "Persönlichen Zentrum" [ref=e60] [cursor=pointer]:
+          - /url: "#/zentrum"
+        - text: öffnet das Nachrichtenzentrum, z. B. mit „Ladevorgang gestartet“ und „Aufladen abgeschlossen“. „Alle als gelesen markieren“ setzt die roten Markierungen zurück.
+      - figure "Nachrichtenzentrum" [ref=e61]:
+        - img "Nachrichtenzentrum" [ref=e62]
+      - generic [ref=e64]:
+        - generic [ref=e65]: Tipp
+        - text: Welche Meldungen per E-Mail oder App-Benachrichtigung kommen, legen Sie unter
+        - link "Einstellungen → Benachrichtigung" [ref=e66] [cursor=pointer]:
+          - /url: "#/einstellungen"
+        - text: fest.
+      - generic [ref=e67]:
+        - link "← Fahrzeug einrichten" [ref=e69] [cursor=pointer]:
+          - /url: "#/einrichtung"
+        - link "Laden →" [ref=e71] [cursor=pointer]:
+          - /url: "#/laden"
+      - paragraph [ref=e72]:
+        - text: Inoffizielle Kurzanleitung zur Leapmotor App 1.18.2 (iOS). Verbindlich sind die Angaben von Leapmotor.
+        - link "Impressum" [ref=e73] [cursor=pointer]:
+          - /url: "#/impressum"
