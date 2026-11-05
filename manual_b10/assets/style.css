@@ -39,8 +39,8 @@ mark { background: #fde68a; color: #000; border-radius: 3px; padding: 0 1px; }
 .content h2 { margin-top: 2em; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
 .crumb { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
 .lead { font-size: 1.1rem; color: var(--muted); }
-figure { margin: 16px 0; }
-figure img { max-width: 100%; max-height: 560px; border: 1px solid var(--line); border-radius: 10px; display: block; cursor: zoom-in; }
+figure { display: inline-block; vertical-align: top; width: calc(50% - 16px); margin: 16px 16px 16px 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; cursor: zoom-in; }
 figcaption { font-size: 14px; color: var(--muted); margin-top: 4px; }
 .callout { border-left: 4px solid; border-radius: 6px; padding: 10px 14px; margin: 16px 0; }
 .callout b:first-child { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
@@ -67,5 +67,8 @@ th { background: var(--code); }
   .nav { position: fixed; top: 61px; left: 0; bottom: 0; z-index: 15; background: var(--panel); border-right: 1px solid var(--line); transform: translateX(-100%); transition: transform .2s; max-height: none; }
   body.menu-open .nav { transform: none; }
   .content { padding: 18px 16px 48px; }
+}
+@media (max-width: 900px) {
+  figure { width: 100%; margin-right: 0; }
 }
 @media print { .topbar, .nav, .pager { display: none; } .content { padding: 0; } }
