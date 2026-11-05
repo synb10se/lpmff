@@ -5,7 +5,7 @@ WikiKit.add({
   keywords: 'einführung start übersicht version versionsverlauf android ios',
   html: ({ card, info, warn }) => `
 <p>Die Leapmotor App gibt es für <b>Android</b> (Google Play Store) und <b>iOS</b> (App Store). Sie steuert wichtige Fahrzeugfunktionen, zeigt Daten zu Laden und Fahrleistung an und kann das Smartphone als <a href="#/schluessel">Bluetooth-Schlüssel</a> nutzbar machen.</p>
-${info('Diese Anleitung beschreibt die App-Version <b>1.16</b> (Stand Oktober 2026). Die Bildschirmfotos stammen von der iOS-Version. Die Android-Oberfläche kann abweichen.')}
+${info('Diese Anleitung beschreibt die App-Version <b>1.18.2</b> (Stand Oktober 2026). Die Bildschirmfotos stammen von der iOS-Version. Die Android-Oberfläche kann abweichen.')}
 ${warn('Zur Aktivierung der App wird die E-Mail-Adresse verwendet, die der Händler beim Kaufabschluss abfragt und an Leapmotor weitergibt.')}
 <h2>Die zwei Hauptbereiche</h2>
 <div class="cards">
@@ -21,6 +21,7 @@ ${card('zentrum', 'Persönliches Zentrum', 'Fahrzeuge, Konto und App-Einstellung
 <table>
 <thead><tr><th>Version</th><th>seit (ca.)</th><th>Neuerungen</th></tr></thead>
 <tbody>
+<tr><td>1.18</td><td>10/2026</td><td>BugFixes, Einbindung der Bedienungsanleitung</td></tr>
 <tr><td>1.16</td><td>10/2026</td><td>Menü „Energieverbrauch Fahrleistung“ komplett neu, Ladehistorie nach DC und AC</td></tr>
 <tr><td>1.15</td><td>09/2026</td><td>Widget-Fehlerbehebung, Transparenz bei Open-Source-Komponenten, visuelle Optimierungen</td></tr>
 <tr><td>1.14</td><td>07/2026</td><td>Überarbeitete Innenraumansicht bei den Temperatureinstellungen, neue Länder und zwölf neue Sprachen</td></tr>
